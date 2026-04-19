@@ -1,0 +1,26 @@
+site_name: pheatmap_py
+
+use_directory_urls: false
+
+theme:
+  name: material
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: numpy
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+  - mkdocs-jupyter:
+      include_source: true
+
+nav:
+  - Home: index.md
+  - Tutorials:
+      - pheatmap tutorial: pheatmap_tutorial.ipynb
+  - API Reference: api.md
