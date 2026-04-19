@@ -18,6 +18,7 @@ from grid_py import (
     convert_width,
     string_height,
     string_width,
+    text_grob,
     unit_c,
 )
 from gtable_py import Gtable
@@ -157,24 +158,15 @@ def lo(
             )
             t = t + extra
         longest = _longest(t, tw)
-        gp = Gpar(fontsize=(fontsize_col if longest < len(coln or []) else fontsize))
-        # Height of a rotated text grob:
-        h = _as_bigpts(string_height(t[longest]))
-        # approximate rotation effect: for 0°, height; 90°/270°, width.
-        if angle_col in (90.0, 270.0):
-            coln_height = _u(
-                _as_bigpts(string_width(t[longest]))
-                + 10.0
-            )
-        elif angle_col in (45.0, 315.0):
-            coln_height = _u(
-                float(
-                    convert_width(string_width(t[longest]), "bigpts", valueOnly=True)
-                ) / np.sqrt(2)
-                + 10.0
-            )
-        else:
-            coln_height = _u(h + 10.0)
+        coln_gp = Gpar(
+            fontsize=(fontsize_col if longest < len(coln or []) else fontsize)
+        )
+        # R: unit(1, "grobheight", textGrob(t[longest], rot = angle_col,
+        #                                    gp = ...)) + unit(10, "bigpts")
+        # Using grobheight delegates the rotation+font-metric trig to the
+        # renderer, so any angle works exactly as in R.
+        col_grob = text_grob(t[longest], rot=float(angle_col), gp=coln_gp)
+        coln_height = Unit(1.0, "grobheight", data=col_grob) + _u(10.0)
     else:
         coln_height = _u(5.0)
 
@@ -195,10 +187,13 @@ def lo(
             )
             t = t + extra
         longest = _longest(t, tw)
-        rown_width = _u(
-            _as_bigpts(string_width(t[longest]))
-            + 10.0
+        # R: unit(1, "grobwidth", textGrob(t[longest], rot=0, gp=gp))
+        #    + unit(10, "bigpts")
+        rown_gp = Gpar(
+            fontsize=(fontsize_row if longest < len(rown or []) else fontsize)
         )
+        row_grob = text_grob(t[longest], rot=0.0, gp=rown_gp)
+        rown_width = Unit(1.0, "grobwidth", data=row_grob) + _u(10.0)
     else:
         rown_width = _u(5.0)
 
@@ -210,7 +205,10 @@ def lo(
             legend_width = _u(
                 12.0 + 1.1 * _as_bigpts(string_width(longest_key)) * 1.2
             )
-            title_len = _u(1.1 * _as_bigpts(string_width("Scale")))
+            # R: title_length = unit(1.1, "grobwidth", textGrob("Scale",
+            #                          gp = gpar(fontface = "bold", ...)))
+            title_grob = text_grob("Scale", gp=Gpar(fontface="bold"))
+            title_len = Unit(1.1, "grobwidth", data=title_grob)
             legend_width = _u(max(_as_bigpts(legend_width), _as_bigpts(title_len)))
         else:
             legend_width = _u(0.0)

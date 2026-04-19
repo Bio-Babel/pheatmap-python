@@ -346,13 +346,15 @@ def pheatmap(
         breaks = generate_breaks(mat_arr, len(color))
     breaks = np.asarray(breaks, dtype=float)
 
-    if not np.isinf(breaks).any() or not np.isneginf(breaks).any():
-        if not np.isneginf(breaks[0]):
-            breaks = np.concatenate([[-np.inf], breaks])
-            color = [color[0]] + color
-        if not np.isinf(breaks[-1]):
-            breaks = np.concatenate([breaks, [np.inf]])
-            color = color + [color[-1]]
+    # R: independently augment with -Inf at the front and +Inf at the back.
+    # The previous outer guard short-circuited incorrectly, and `np.isinf`
+    # also matched -Inf at the tail.
+    if not np.isneginf(np.min(breaks)):
+        breaks = np.concatenate([[-np.inf], breaks])
+        color = [color[0]] + color
+    if not np.isposinf(np.max(breaks)):
+        breaks = np.concatenate([breaks, [np.inf]])
+        color = color + [color[-1]]
     non_inf_breaks = breaks[np.isfinite(breaks)]
 
     if legend and (legend_breaks is None or is_na2(legend_breaks)):
@@ -388,14 +390,12 @@ def pheatmap(
         )
         annotation_col = annotation
 
-    if annotation_col is not None:
-        if labels_col is not None:
-            keep = [c for c in labels_col if c in annotation_col.index]
-            annotation_col = annotation_col.loc[keep]
-    if annotation_row is not None:
-        if labels_row is not None:
-            keep = [r for r in labels_row if r in annotation_row.index]
-            annotation_row = annotation_row.loc[keep]
+    # R: annotation_col[colnames(mat), , drop=F] — preserves matrix column
+    # order and yields NA-filled rows for any name missing in the annotation.
+    if annotation_col is not None and labels_col is not None:
+        annotation_col = annotation_col.reindex(list(labels_col))
+    if annotation_row is not None and labels_row is not None:
+        annotation_row = annotation_row.reindex(list(labels_row))
 
     ann_map: dict[str, pd.Series] = {}
     if annotation_row is not None:

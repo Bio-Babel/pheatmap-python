@@ -49,11 +49,13 @@ class PHeatmap:
         )
 
     def _ipython_display_(self) -> None:  # pragma: no cover - UI only
-        try:
-            grid_newpage()
-        except Exception:
-            pass
+        from IPython.display import Image, display
+
+        from grid_py._state import get_state
+
+        grid_newpage()
         _grid_draw_impl(self.gtable)
+        display(Image(data=get_state().get_renderer().to_png_bytes(), format="png"))
 
 
 def grid_draw(x: Any, recording: bool = True) -> None:

@@ -102,75 +102,6 @@ def heatmap_motor(
     res = layout["gt"]
     mindim = layout["mindim"]
 
-    # If a filename is requested we compute sizes from the gtable.
-    if filename is not None and not is_na2(filename):
-        from grid_py import convert_height, convert_width
-
-        if height is None or (np.isscalar(height) and pd.isna(height)):
-            height_in = float(convert_height(gtable_height(res), "in", valueOnly=True))
-        else:
-            height_in = float(height)
-        if width is None or (np.isscalar(width) and pd.isna(width)):
-            width_in = float(convert_width(gtable_width(res), "in", valueOnly=True))
-        else:
-            width_in = float(width)
-        _, ext = os.path.splitext(str(filename))
-        ext = ext.lower().lstrip(".")
-        if ext not in {"pdf", "png", "jpeg", "jpg", "tiff", "bmp"}:
-            raise ValueError("File type should be: pdf, png, bmp, jpg, tiff")
-        # Build the populated table and export via matplotlib as a fallback
-        # renderer when grid_py's Cairo renderer is insufficient for this
-        # extension.  The layout itself is identical.
-        gt = heatmap_motor(
-            matrix,
-            border_color=border_color,
-            cellwidth=cellwidth,
-            cellheight=cellheight,
-            tree_col=tree_col,
-            tree_row=tree_row,
-            treeheight_col=treeheight_col,
-            treeheight_row=treeheight_row,
-            filename=None,
-            width=None,
-            height=None,
-            breaks=breaks,
-            color=color,
-            legend=legend,
-            annotation_row=annotation_row,
-            annotation_col=annotation_col,
-            annotation_colors=annotation_colors,
-            annotation_legend=annotation_legend,
-            annotation_names_row=annotation_names_row,
-            annotation_names_col=annotation_names_col,
-            main=main,
-            fontsize=fontsize,
-            fontsize_row=fontsize_row,
-            fontsize_col=fontsize_col,
-            hjust_col=hjust_col,
-            vjust_col=vjust_col,
-            angle_col=angle_col,
-            fmat=fmat,
-            fmat_draw=fmat_draw,
-            fontsize_number=fontsize_number,
-            number_color=number_color,
-            gaps_col=gaps_col,
-            gaps_row=gaps_row,
-            labels_row=labels_row,
-            labels_col=labels_col,
-            **kwargs,
-        )
-        grid_newpage(width=width_in, height=height_in, dpi=300, bg="white")
-        grid_draw(gt)
-        # grid_py's Cairo renderer writes to the default surface.  We rely on
-        # matplotlib-saveto-file fallback here if the renderer exposes one;
-        # otherwise the user can export via their own renderer.
-        try:
-            from grid_py import save_as  # type: ignore[attr-defined]
-            save_as(filename)
-        except ImportError:
-            pass  # caller may accept unsaved output in their environment
-        return gt
-
     # Omit border when the cells are very small.
     if mindim < 3:
         border_color = None
@@ -266,4 +197,94 @@ def heatmap_motor(
         t = 4 if labels_row is None else 3
         res = gtable_add_grob(res, elem, t=t, l=5, b=5, clip="off", name="legend")
 
+    if filename is not None and not is_na2(filename):
+        _save_to_file(res, filename, width, height)
+
     return res
+
+
+def _save_to_file(
+    gt: Any,
+    filename: str,
+    width: float | None,
+    height: float | None,
+) -> None:
+    """Render *gt* to *filename*, mimicking R's pdf/png/jpeg/tiff/bmp branch.
+
+    Width/height default to the gtable's intrinsic size (in inches).  Vector
+    formats (pdf/svg/ps) are written via Cairo's vector surfaces; raster
+    formats (png/jpeg/tiff/bmp) go through Cairo's image surface — jpeg/tiff/
+    bmp additionally need PIL for the conversion from PNG.
+    """
+    from grid_py import convert_height, convert_width
+    from grid_py._state import get_state
+    from grid_py.renderer import CairoRenderer
+
+    _, ext = os.path.splitext(str(filename))
+    ext = ext.lower().lstrip(".")
+    if ext not in {"pdf", "svg", "ps", "png", "jpeg", "jpg", "tiff", "bmp"}:
+        raise ValueError("File type should be: pdf, png, bmp, jpg, tiff")
+
+    # Mirror R: convertHeight(gtable_height(...), "inches") uses the active
+    # device's dimensions to resolve `1npc` parts.  R's pdf/png default is
+    # 7x7 inches; we install a temporary 7x7 measurement device so the
+    # gtable's intrinsic size matches what R reports.
+    state = get_state()
+    measure_renderer = CairoRenderer(width=7.0, height=7.0, dpi=72.0,
+                                     surface_type="image", bg="white")
+    state.reset()
+    state.init_device(measure_renderer)
+    if height is None or (np.isscalar(height) and pd.isna(height)):
+        height_in = float(np.atleast_1d(
+            convert_height(gtable_height(gt), "in", valueOnly=True)
+        ).ravel()[0])
+    else:
+        height_in = float(height)
+    if width is None or (np.isscalar(width) and pd.isna(width)):
+        width_in = float(np.atleast_1d(
+            convert_width(gtable_width(gt), "in", valueOnly=True)
+        ).ravel()[0])
+    else:
+        width_in = float(width)
+
+    # R uses res=300 for raster formats; pdf has no DPI concept.
+    if ext in {"pdf", "svg", "ps"}:
+        renderer = CairoRenderer(
+            width=width_in, height=height_in, dpi=72.0,
+            surface_type=ext, filename=str(filename), bg="white",
+        )
+        state.reset()
+        state.init_device(renderer)
+        grid_draw(gt)
+        renderer.finish()
+        return
+
+    # Raster path: render via in-memory ImageSurface at 300 dpi, then write.
+    renderer = CairoRenderer(
+        width=width_in, height=height_in, dpi=300.0,
+        surface_type="image", bg="white",
+    )
+    state.reset()
+    state.init_device(renderer)
+    grid_draw(gt)
+    if ext == "png":
+        renderer.write_to_png(str(filename))
+        return
+
+    # jpeg/jpg/tiff/bmp via Pillow.
+    from io import BytesIO
+    try:
+        from PIL import Image  # type: ignore[import-not-found]
+    except ImportError as exc:  # pragma: no cover - depends on environment
+        raise RuntimeError(
+            f"Saving '{ext}' requires Pillow (pip install pillow)."
+        ) from exc
+    buf = BytesIO(renderer.to_png_bytes())
+    img = Image.open(buf)
+    pil_format = {"jpg": "JPEG", "jpeg": "JPEG", "tiff": "TIFF", "bmp": "BMP"}[ext]
+    save_kwargs: dict[str, Any] = {}
+    if pil_format == "JPEG":
+        img = img.convert("RGB")
+    elif pil_format == "TIFF":
+        save_kwargs["compression"] = "tiff_lzw"  # R's tiff() default.
+    img.save(str(filename), format=pil_format, **save_kwargs)

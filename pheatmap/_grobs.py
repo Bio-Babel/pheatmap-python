@@ -22,7 +22,9 @@ from grid_py import (
     string_height,
     text_grob,
     unit_c,
+    unit_rep,
 )
+from grid_py._units import unit_summary_min
 
 from ._colours import colour_ramp_palette, convert_annotations
 from ._layout import find_coordinates
@@ -145,11 +147,10 @@ def draw_matrix(
     x = coord_x["coord"] - x_half
     y = Unit(1.0, "npc") - (coord_y["coord"] - y_half)
 
-    # expand.grid(y = y, x = x) → y varies fastest
-    x_rep = np.repeat(_vals(x), n)
-    y_rep = np.tile(_vals(y), m)
-    x_g = Unit(x_rep, _first_units(x))
-    y_g = Unit(y_rep, _first_units(y))
+    # expand.grid(y = y, x = x) → y varies fastest, x is replicated per y.
+    # Use unit_rep to preserve compound-unit structure when gaps are present.
+    x_g = unit_rep(x, each=n)
+    y_g = unit_rep(y, times=m)
 
     # Flatten colours in column-major order (R's `as.vector(mat)`).
     fill = np.asarray(matrix, dtype=object).ravel(order="F")
@@ -220,9 +221,15 @@ def draw_legend(
 ) -> GTree:
     color = np.asarray(color)
     breaks = np.asarray(breaks, dtype=float)
-    finite = np.isfinite(breaks)
-    color = color[finite[:len(color)]] if len(color) == len(breaks) else color[: finite.sum()]
-    breaks = breaks[finite]
+    # R does `color = color[!is.infinite(breaks)]` with recycling, the net
+    # effect of which (after pheatmap()'s -Inf/+Inf augmentation) is to drop
+    # the sentinel-duplicated colours at each augmented end so that the
+    # remaining colours line up with the finite breaks.
+    if np.isneginf(breaks[0]) and len(color) > 0:
+        color = color[1:]
+    if np.isposinf(breaks[-1]) and len(color) > 0:
+        color = color[:-1]
+    breaks = breaks[np.isfinite(breaks)]
 
     if isinstance(legend, dict):
         labels = list(legend.keys())
@@ -232,9 +239,8 @@ def draw_legend(
         vals = arr
         labels = [str(v) for v in arr]
 
-    height = Unit(min(1.0, 150.0 / 72.0), "npc") if False else _u(150.0)
-    # height = min(1npc, 150bigpts) — keep 150bigpts lower bound only
-    height = _u(150.0)
+    # R: height = min(unit(1, "npc"), unit(150, "bigpts"))
+    height = unit_summary_min(Unit(1.0, "npc"), _u(150.0))
 
     span = breaks.max() - breaks.min()
     if span == 0:
@@ -246,16 +252,11 @@ def draw_legend(
     bnorm = (breaks - breaks.min()) / span
     breaks_unit = unit_c(*[height * float(p) for p in bnorm]) + offset
 
-    # rect heights: differences are in bigpts (height was bigpts), so we can
-    # emit them as a plain bigpts Unit.
-    height_bp = float(np.atleast_1d(height.values).ravel()[0])
-    b_top_frac = bnorm[1:]
-    b_bot_frac = bnorm[:-1]
-    h_vals = (b_top_frac - b_bot_frac) * height_bp
-    h_unit = Unit(h_vals, "bigpts")
-
-    # y-anchor of each rect = offset + height * bnorm[:-1]
-    y_bot = unit_c(*[height * float(p) for p in b_bot_frac]) + offset
+    # R: h = breaks[-1] - breaks[-length(breaks)] — keep this as a unit
+    # subtraction so the heights stay correct when `height` is the compound
+    # min(1npc, 150bigpts) rather than a single bigpts scalar.
+    h_unit = breaks_unit[1:] - breaks_unit[:-1]
+    y_bot = breaks_unit[:-1]
 
     rect = rect_grob(
         x=Unit(0.0, "npc"),
@@ -293,11 +294,9 @@ def draw_annotations(
     y_unit = Unit(y_vals, "bigpts")
 
     if horizontal:
-        # expand.grid(x=x, y=y) → x varies fastest
-        x_rep = np.tile(_vals(x), n)
-        y_rep = np.repeat(_vals(y_unit), m)
-        xg = Unit(x_rep, _first_units(x))
-        yg = Unit(y_rep, _first_units(y_unit))
+        # expand.grid(x=x, y=y) → x varies fastest, y is replicated per x.
+        xg = unit_rep(x, times=n)
+        yg = unit_rep(y_unit, each=m)
         fill = converted_annotations.ravel(order="F")
         return rect_grob(
             x=xg,
@@ -309,18 +308,16 @@ def draw_annotations(
     # vertical
     # a = x; x = 1npc - y; y = 1npc - a
     # expand.grid(y = y, x = x) → y varies fastest
-    new_x_vec = _vals(Unit(1.0, "npc") - y_unit)  # length n (bigpts, relative)
-    new_y_vec = _vals(Unit(1.0, "npc") - x)       # length m
+    new_x = Unit(1.0, "npc") - y_unit  # length n
+    new_y = Unit(1.0, "npc") - x       # length m
 
-    y_rep = np.tile(new_y_vec, n)
-    x_rep = np.repeat(new_x_vec, m)
+    yg = unit_rep(new_y, times=n)
+    xg = unit_rep(new_x, each=m)
 
-    # Units for the vectors may be different; pick npc where possible.
-    xg = Unit(x_rep, "npc")
-    yg = Unit(y_rep, "npc")
-
-    # Rebuild fill in the correct order matching expand.grid(y=y, x=x)
-    fill = converted_annotations.ravel(order="C")
+    # Fill order matches expand.grid(y=new_y[len=m], x=new_x[len=n]): y varies
+    # fastest, so element k = (row=k%m, track=k//m). That is column-major over
+    # the (m, n) annotation matrix.
+    fill = converted_annotations.ravel(order="F")
 
     return rect_grob(
         x=xg,
@@ -349,13 +346,14 @@ def draw_annotation_names(
     )
     y = Unit(y_vals, "bigpts")
 
+    # R uses fontface=2 for annotation names (= bold).
     if horizontal:
         return text_grob(
             list(annotations.columns),
             x=x,
             y=y,
             hjust=0.0,
-            gp=Gpar(fontsize=fontsize, fontface=2),
+            gp=Gpar(fontsize=fontsize, fontface="bold"),
         )
     new_x = Unit(1.0, "npc") - y
     new_y = Unit(1.0, "npc") - x
@@ -366,7 +364,7 @@ def draw_annotation_names(
         vjust=vjust_col,
         hjust=hjust_col,
         rot=angle_col,
-        gp=Gpar(fontsize=fontsize, fontface=2),
+        gp=Gpar(fontsize=fontsize, fontface="bold"),
     )
 
 
@@ -383,6 +381,7 @@ def draw_annotation_legend(
     grobs: list = []
 
     for name, series in annotation.items():
+        gp_kwargs = {"fontface": "bold", **kwargs}
         grobs.append(
             text_grob(
                 name,
@@ -390,7 +389,7 @@ def draw_annotation_legend(
                 y=y,
                 vjust=1.0,
                 hjust=0.0,
-                gp=Gpar(fontface="bold", **kwargs),
+                gp=Gpar(**gp_kwargs),
             )
         )
         y = y - text_h * 1.5
@@ -478,4 +477,8 @@ def draw_annotation_legend(
 
 
 def draw_main(text: str, **kwargs: Any):
-    return text_grob(text, gp=Gpar(fontface="bold", **kwargs))
+    # R uses gpar(fontface="bold", ...) which lets the "..." override the
+    # bold default if the caller asks for it; we replicate that by letting
+    # the caller's fontface win.
+    gp_kwargs = {"fontface": "bold", **kwargs}
+    return text_grob(text, gp=Gpar(**gp_kwargs))

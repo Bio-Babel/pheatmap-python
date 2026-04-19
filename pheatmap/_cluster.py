@@ -31,9 +31,11 @@ _VALID_DISTANCES = {
 }
 
 
-# SciPy linkage method name mapping.  ``ward`` in SciPy corresponds to
-# R's ``ward.D2``; R's ``ward`` / ``ward.D`` require pre-squaring the input
-# dissimilarity matrix, which is not exercised by the tutorial.
+# SciPy linkage method name mapping.  SciPy's ``ward`` matches R's
+# ``ward.D2``.  R's ``ward.D`` (and the legacy alias ``ward``) treat the
+# input distances as if already squared; we mimic that by passing
+# ``sqrt(d)`` to scipy and squaring the returned heights (see Murtagh &
+# Legendre, "Ward's Hierarchical Agglomerative Clustering Method", 2014).
 _METHOD_TO_SCIPY = {
     "single": "single",
     "complete": "complete",
@@ -42,9 +44,10 @@ _METHOD_TO_SCIPY = {
     "median": "median",
     "centroid": "centroid",
     "ward.D2": "ward",
-    "ward.D": "ward",   # approximation; see note in 05_design.md
-    "ward": "ward",     # legacy alias for ward.D
+    "ward.D": "ward",
+    "ward": "ward",
 }
+_WARD_D_VARIANTS = {"ward.D", "ward"}
 
 
 # SciPy pdist metric name mapping.
@@ -173,7 +176,11 @@ def cluster_mat(
             d = arr
 
     scipy_method = _METHOD_TO_SCIPY[method]
-    link = linkage(d, method=scipy_method)
+    if method in _WARD_D_VARIANTS:
+        link = linkage(np.sqrt(d), method=scipy_method)
+        link[:, 2] = link[:, 2] ** 2
+    else:
+        link = linkage(d, method=scipy_method)
     return _hclust_from_linkage(link, labels=labels)
 
 
