@@ -13,6 +13,14 @@ Python version of **pheatmap** that runs on a faithful port of R's native **grid
 ## Install
 
 ```bash
+pip install pheatmap-python
+```
+
+Or, for a local development checkout:
+
+```bash
+git clone https://github.com/Bio-Babel/pheatmap-python.git
+cd pheatmap_py
 pip install -e ".[dev]"
 ```
 

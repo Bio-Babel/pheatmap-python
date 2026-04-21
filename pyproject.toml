@@ -3,30 +3,82 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pheatmap_py"
-version = "1.0.13+ffd0f8c"
-description = "Python port of the R pheatmap package"
+name = "pheatmap-python"
+version = "1.0.13"
+description = "Python port of the R pheatmap package (tracks R pheatmap 1.0.13)"
+readme = "README.md"
 requires-python = ">=3.10"
 license = "GPL-2.0-or-later"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Jeffery Liu", email = "jeffliu.lucky@gmail.com" },
+]
+keywords = [
+    "pheatmap",
+    "heatmap",
+    "clustering",
+    "visualization",
+    "R-port",
+    "dendrograms",
+    "bioinformatics",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Typing :: Typed",
+]
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.11",
     "pandas>=2.0",
     "matplotlib>=3.8",
-    "grid_py>=0.1.0",
-    "gtable_py>=0.1.0",
-    "scales>=1.0",
+    "rgrid-python>=4.5.3",
+    "gtable-python>=0.3.6",
+    "scales-python>=1.4.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "ruff"]
-docs = ["mkdocs", "mkdocstrings[python]", "mkdocs-material", "mkdocs-jupyter"]
+dev = ["pytest", "pytest-cov", "ruff", "build", "twine"]
+docs = [
+    "mkdocs",
+    "mkdocstrings[python]",
+    "mkdocs-material",
+    "mkdocs-jupyter",
+]
+
+[project.urls]
+Homepage      = "https://github.com/Bio-Babel/pheatmap-python"
+Repository    = "https://github.com/Bio-Babel/pheatmap-python"
+Issues        = "https://github.com/Bio-Babel/pheatmap-python/issues"
+Documentation = "https://github.com/Bio-Babel/pheatmap-python#readme"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pheatmap"]
 
 [tool.hatch.build.targets.sdist]
-include = ["pheatmap", "tests", "tutorials", "validation", "docs", "mkdocs.yml", "README.md", "LICENSE"]
+exclude = [
+    "tutorials/",
+    "docs/",
+    "tests/",
+    "site/",
+    "validation/",
+    "mkdocs.yml",
+    ".github/",
+    "*.egg-info/",
+    "build/",
+    "dist/",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
