@@ -1,5 +1,7 @@
 # pheatmap-python
 
+[![PyPI](https://img.shields.io/pypi/v/pheatmap-python)](https://pypi.org/project/pheatmap-python/)
+
 Python version of **pheatmap** that runs on a faithful port of R's native **grid** graphics system instead of matplotlib.
 
 - 🎨 **No matplotlib.** Renders through `grid_py`'s Cairo backend
