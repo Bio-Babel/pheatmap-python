@@ -72,6 +72,8 @@ def heatmap_motor(
     gaps_row: Sequence[int] | None,
     labels_row: Sequence[str] | None,
     labels_col: Sequence[str] | None,
+    use_raster: bool = False,
+    interpolate: bool = False,
     **kwargs: Any,
 ):
     layout = lo(
@@ -131,6 +133,8 @@ def heatmap_motor(
         fontsize_number=fontsize_number,
         number_color=number_color,
         draw_numbers=fmat_draw,
+        use_raster=use_raster,
+        interpolate=interpolate,
     )
     res = gtable_add_grob(res, elem, t=4, l=3, clip="off", name="matrix")
 

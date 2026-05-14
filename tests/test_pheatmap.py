@@ -123,3 +123,79 @@ class TestInputCoercion:
     def test_rejects_bad_scale(self, test_matrix: np.ndarray) -> None:
         with pytest.raises(ValueError):
             pheatmap(test_matrix, scale="bogus", silent=True)
+
+
+class TestUseRaster:
+    """``use_raster=True`` embeds the heatmap body as a single raster image,
+    matching ``ComplexHeatmap::Heatmap(use_raster = TRUE)``.  The motivation is
+    PDF file size on large matrices.
+    """
+
+    def test_returns_valid_pheatmap_with_raster(
+        self, test_matrix: np.ndarray
+    ) -> None:
+        res = pheatmap(test_matrix, use_raster=True, silent=True)
+        assert isinstance(res, PHeatmap)
+        assert res.gtable is not None
+
+    def test_raster_pdf_far_smaller_than_vector(self, tmp_path) -> None:
+        rng = np.random.RandomState(0)
+        big = rng.randn(50, 1500)  # 75 000 cells: enough to show the win
+        vec = tmp_path / "vec.pdf"
+        ras = tmp_path / "ras.pdf"
+        pheatmap(big, filename=str(vec), width=6, height=4,
+                 silent=True, use_raster=False)
+        pheatmap(big, filename=str(ras), width=6, height=4,
+                 silent=True, use_raster=True)
+        # Raster path drops one rect per cell. At 75 000 cells the fixed
+        # overhead (dendrograms, legend, frame) still dominates, so we only
+        # assert a 3x win here; at copykat scale (~3M cells) the win is ~50x.
+        assert ras.stat().st_size * 3 < vec.stat().st_size, (
+            f"raster {ras.stat().st_size} B vs vector {vec.stat().st_size} B"
+        )
+
+    def test_raster_chunked_with_gaps(self, test_matrix: np.ndarray) -> None:
+        """``gaps_col`` / ``gaps_row`` split the matrix body into multiple
+        raster tiles, one per chunk (mirrors ``ComplexHeatmap`` behaviour for
+        split heatmaps). The call succeeds and the gtable is populated."""
+        rows, cols = test_matrix.shape
+        gr, gc = [rows // 2], [cols // 3, 2 * cols // 3]
+        res = pheatmap(
+            test_matrix,
+            cluster_rows=False,
+            cluster_cols=False,
+            gaps_col=gc,
+            gaps_row=gr,
+            use_raster=True,
+            silent=True,
+        )
+        assert res.gtable is not None
+
+    def test_raster_gaps_emit_one_grob_per_chunk(self, test_matrix: np.ndarray) -> None:
+        """Each (row_chunk x col_chunk) cross product produces one raster grob."""
+        from pheatmap._grobs import _chunk_ranges, _draw_matrix_raster
+
+        rows, cols = test_matrix.shape
+        # Bypass the full pheatmap pipeline by passing a literal colour matrix.
+        colour_mat = np.full(test_matrix.shape, "#67a9cf", dtype=object)
+        gaps_rows, gaps_cols = [rows // 2], [cols // 3, 2 * cols // 3]
+        tree = _draw_matrix_raster(
+            colour_mat, gaps_rows, gaps_cols,
+            fmat=np.zeros_like(colour_mat),
+            fontsize_number=10, number_color="grey30",
+            draw_numbers=False, interpolate=False,
+        )
+        expected = len(_chunk_ranges(rows, gaps_rows)) * len(_chunk_ranges(cols, gaps_cols))
+        children = getattr(tree, "children", None) or getattr(tree, "_children", None)
+        assert children is not None and len(children) == expected, (
+            f"expected {expected} raster grobs, got {len(children) if children else 'None'}"
+        )
+
+    def test_chunk_ranges_skips_empty(self) -> None:
+        """A trailing gap at position ``n`` produces no empty chunk."""
+        from pheatmap._grobs import _chunk_ranges
+        assert _chunk_ranges(10, None) == [(0, 10)]
+        assert _chunk_ranges(10, []) == [(0, 10)]
+        assert _chunk_ranges(10, [3, 7]) == [(0, 3), (3, 7), (7, 10)]
+        assert _chunk_ranges(10, [5, 10]) == [(0, 5), (5, 10)]   # trailing skipped
+        assert _chunk_ranges(10, [0, 5]) == [(0, 5), (5, 10)]    # leading skipped

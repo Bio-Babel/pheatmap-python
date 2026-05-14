@@ -18,12 +18,14 @@ from grid_py import (
     grob_tree,
     grid_pretty,
     polyline_grob,
+    raster_grob,
     rect_grob,
     string_height,
     text_grob,
     unit_c,
     unit_rep,
 )
+from grid_py._colour import parse_r_colour
 from grid_py._units import unit_summary_min
 
 from ._colours import colour_ramp_palette, convert_annotations
@@ -127,6 +129,100 @@ def draw_dendrogram(hc: Any, gaps: Sequence[int] | None, horizontal: bool = True
     return polyline_grob(x=x, y=y, id=list(ids))
 
 
+def _colour_matrix_to_rgba(matrix: np.ndarray) -> np.ndarray:
+    """Convert an (n, m) array of colour strings to an (n, m, 4) uint8 RGBA array.
+
+    Uses a unique-colour lookup so the cost is O(unique colours), not O(cells).
+    """
+    flat = np.asarray(matrix, dtype=object).ravel()
+    uniques, inverse = np.unique(flat, return_inverse=True)
+    lut = np.empty((len(uniques), 4), dtype=np.uint8)
+    for i, c in enumerate(uniques):
+        r, g, b, a = parse_r_colour(c)
+        lut[i] = (int(r * 255), int(g * 255), int(b * 255), int(a * 255))
+    n, m = matrix.shape
+    return lut[inverse].reshape(n, m, 4)
+
+
+def _chunk_ranges(n: int, gaps: Sequence[int] | None) -> list[tuple[int, int]]:
+    """Split ``[0, n)`` into half-open chunks bounded by gap positions.
+
+    ``gaps`` are 1-based cell counts *before* each gap (the same convention
+    ``find_coordinates`` uses), so ``gaps=[2, 5]`` with ``n=8`` yields chunks
+    ``[(0,2), (2,5), (5,8)]``.  Empty chunks (e.g. a redundant trailing gap
+    at position ``n``) are filtered out, since they have no cells to render.
+    """
+    if not gaps:
+        return [(0, n)]
+    starts = [0] + list(gaps)
+    ends = list(gaps) + [n]
+    return [(s, e) for s, e in zip(starts, ends) if s < e]
+
+
+def _draw_matrix_raster(
+    matrix: np.ndarray,
+    gaps_rows: Sequence[int] | None,
+    gaps_cols: Sequence[int] | None,
+    fmat: np.ndarray,
+    fontsize_number: float,
+    number_color: str,
+    draw_numbers: bool,
+    interpolate: bool,
+) -> GTree:
+    """Raster equivalent of :func:`draw_matrix` (vector path).
+
+    Emits one ``raster_grob`` per (row-chunk, col-chunk) cross product, so
+    matrices with ``gaps_row`` / ``gaps_col`` render correctly with multiple
+    raster tiles rather than smearing through the gaps.  Mirrors what R's
+    ``ComplexHeatmap::Heatmap(use_raster = TRUE)`` does for split heatmaps.
+    """
+    n, m = matrix.shape
+    coord_x = find_coordinates(m, gaps_cols)
+    coord_y = find_coordinates(n, gaps_rows)
+    size_x = coord_x["size"]
+    size_y = coord_y["size"]
+    x_centres = coord_x["coord"]
+    y_centres = coord_y["coord"]
+
+    grobs: list[Any] = []
+    for r_s, r_e in _chunk_ranges(n, gaps_rows):
+        for c_s, c_e in _chunk_ranges(m, gaps_cols):
+            sub = matrix[r_s:r_e, c_s:c_e]
+            image = _colour_matrix_to_rgba(sub)
+
+            # X extent in npc: span between the left edge of the chunk's first
+            # cell and the right edge of its last cell.
+            left = x_centres[c_s] - size_x * 0.5
+            right = x_centres[c_e - 1] + size_x * 0.5
+            cx = (left + right) * 0.5
+            cw = right - left
+
+            # Y extent: y-flip via 1npc - (...) so matrix row 0 is at the top.
+            top = Unit(1.0, "npc") - (y_centres[r_s] - size_y * 0.5)
+            bottom = Unit(1.0, "npc") - (y_centres[r_e - 1] + size_y * 0.5)
+            cy = (top + bottom) * 0.5
+            ch = top - bottom
+
+            grobs.append(raster_grob(
+                image,
+                x=cx, y=cy, width=cw, height=ch,
+                interpolate=interpolate,
+            ))
+
+    if draw_numbers:
+        x_g = unit_rep(x_centres - size_x * 0.5, each=n)
+        y_g = unit_rep(Unit(1.0, "npc") - (y_centres - size_y * 0.5), times=m)
+        labels = np.asarray(fmat, dtype=object).ravel(order="F")
+        grobs.append(text_grob(
+            list(labels),
+            x=x_g,
+            y=y_g,
+            gp=Gpar(col=number_color, fontsize=fontsize_number),
+        ))
+
+    return grob_tree(*grobs)
+
+
 def draw_matrix(
     matrix: np.ndarray,
     border_color: str | None,
@@ -136,8 +232,32 @@ def draw_matrix(
     fontsize_number: float,
     number_color: str,
     draw_numbers: bool,
+    use_raster: bool = False,
+    interpolate: bool = False,
 ) -> GTree:
-    """Render the coloured matrix grid and optional cell-value text."""
+    """Render the coloured matrix grid and optional cell-value text.
+
+    When ``use_raster`` is ``True`` the matrix body is drawn as embedded
+    raster image(s) instead of one vector rectangle per cell — matching
+    ``ComplexHeatmap::Heatmap(use_raster = TRUE)``.  This keeps PDF file sizes
+    bounded for matrices with millions of cells.  When ``gaps_row`` /
+    ``gaps_col`` are set the body is split into one raster tile per chunk so
+    the gap regions stay empty (no smearing).  Per-cell borders are
+    suppressed in raster mode (vector borders on a raster body would defeat
+    the purpose of rasterisation).
+    """
+    if use_raster:
+        return _draw_matrix_raster(
+            matrix=matrix,
+            gaps_rows=gaps_rows,
+            gaps_cols=gaps_cols,
+            fmat=fmat,
+            fontsize_number=fontsize_number,
+            number_color=number_color,
+            draw_numbers=draw_numbers,
+            interpolate=interpolate,
+        )
+
     n, m = matrix.shape
     coord_x = find_coordinates(m, gaps_cols)
     coord_y = find_coordinates(n, gaps_rows)

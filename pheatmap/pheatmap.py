@@ -123,6 +123,8 @@ def pheatmap(
     height: float | None = None,
     silent: bool = False,
     na_col: str = "#DDDDDD",
+    use_raster: bool = False,
+    interpolate: bool = False,
     **kwargs: Any,
 ) -> PHeatmap:
     """Draw a clustered heatmap.
@@ -458,6 +460,8 @@ def pheatmap(
         gaps_row=gaps_row,
         labels_row=labels_row,
         labels_col=labels_col,
+        use_raster=use_raster,
+        interpolate=interpolate,
         **kwargs,
     )
 
