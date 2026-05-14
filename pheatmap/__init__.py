@@ -39,7 +39,7 @@ from ._scale import scale_mat, scale_rows
 from ._utils import identity2, is_na2
 from .pheatmap import pheatmap
 
-__version__ = "1.0.13"
+__version__ = "1.0.13.post1"
 __r_commit__ = "ffd0f8c"
 
 __all__ = [
