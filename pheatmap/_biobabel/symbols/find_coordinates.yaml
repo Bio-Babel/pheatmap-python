@@ -1,0 +1,46 @@
+id: pheatmap.find_coordinates
+import_path: pheatmap._layout.find_coordinates
+kind: function
+signature: "find_coordinates(n: int, gaps: Sequence[int] | None, m: Sequence[int] | None = None) -> dict[str, grid_py.Unit]"
+purpose: "Compute per-cell centre coordinates and the cell size along one axis, accounting for gap insertion between clusters."
+description: >
+  pheatmap/_layout.py:46. With no gaps, coordinates are simple npc fractions
+  (`m/n`) and size is `1/n` npc. With gaps (1-based cell counts *before* each
+  gap), each gap inserts 4 bigpts of extra space and the returned size/coord
+  are compound grid_py Units combining npc and bigpts terms. `m` selects which
+  1-based cell indices to compute (defaults to `1..n`); draw_dendrogram passes
+  a non-default `m` to place internal dendrogram nodes at fractional
+  positions. This is the single shared coordinate primitive behind
+  draw_matrix, draw_colnames, draw_rownames, draw_dendrogram, and
+  draw_annotations.
+parameters:
+  - name: n
+    type: int
+    required: true
+    description: "Number of cells along the axis."
+  - name: gaps
+    type: "Sequence[int] | None"
+    required: true
+    description: "1-based gap positions (number of cells before each gap); None or empty means no gaps."
+  - name: m
+    type: "Sequence[int] | None"
+    required: false
+    default: null
+    description: "Cell indices (1-based, may be fractional) to compute coordinates for; defaults to 1..n."
+mutates: "execution_class=pure_function; no mutation; returns_kind=new_object"
+returns: "dict — {'coord': Unit-vector, 'size': Unit-scalar}."
+requires: []
+writes: []
+examples:
+  - "find_coordinates(8, gaps=[3, 6])"
+  - "find_coordinates(5, gaps=None)"
+failure_fixes:
+  - when: "any gap position exceeds n"
+    suggest:
+      - "ensure every gap position is <= n (the axis length)"
+    explanation: "Raises ValueError('Gaps do not match with matrix size')."
+related:
+  - pheatmap.lo
+  - pheatmap.draw_matrix
+  - pheatmap.draw_dendrogram
+  - pheatmap.heatmap_motor

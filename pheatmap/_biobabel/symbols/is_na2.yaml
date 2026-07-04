@@ -1,0 +1,27 @@
+id: pheatmap.is_na2
+import_path: pheatmap._utils.is_na2
+kind: function
+signature: "is_na2(x: Any) -> bool"
+purpose: "Return True iff x is a scalar NA-like value, replicating R pheatmap's internal is.na2 helper used throughout for optional-argument checks."
+description: >
+  pheatmap/_utils.py:18. Contract (grounded in tests/test_utils.py): None,
+  NaN, and pd.NA are NA; a DataFrame is never NA (even an empty one); an empty
+  list/tuple/dict/array is NA; a non-empty array/Series is NOT NA even if it
+  contains NaNs; any other scalar goes through pandas.isna(). Used
+  pervasively in pheatmap() to test whether an optional argument (breaks,
+  filename, annotation_col, legend_breaks, cutree_rows, ...) was left
+  effectively unset, since R's NA is not directly representable in Python.
+parameters:
+  - name: x
+    type: Any
+    required: true
+mutates: "execution_class=pure_function; no mutation; returns_kind=none"
+returns: "bool"
+requires: []
+writes: []
+examples:
+  - "is_na2(None)  # True"
+  - "is_na2(np.array([np.nan, 1.0]))  # False — non-empty array is not scalar NA"
+  - "is_na2(pandas.DataFrame({'a': [1]}))  # False — DataFrames are never NA"
+related:
+  - pheatmap.pheatmap

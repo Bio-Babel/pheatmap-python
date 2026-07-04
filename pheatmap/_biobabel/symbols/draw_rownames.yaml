@@ -1,0 +1,24 @@
+id: pheatmap.draw_rownames
+import_path: pheatmap._grobs.draw_rownames
+kind: function
+signature: "draw_rownames(rown, gaps, **kwargs) -> grid_py.Grob"
+purpose: "Render row name labels to the right of the matrix, positioned per-row via find_coordinates."
+description: >
+  pheatmap/_grobs.py:319. Left-justified, vertically centred per row.
+  `**kwargs` are forwarded into grid_py's Gpar (e.g. fontsize).
+parameters:
+  - name: rown
+    type: "Sequence[str]"
+    required: true
+  - name: gaps
+    type: "Sequence[int] | None"
+    required: true
+mutates: "execution_class=pure_function; builds a new grob; returns_kind=new_object"
+returns: "grid_py text grob."
+requires: []
+writes: []
+examples:
+  - "draw_rownames(['Gene1','Gene2'], gaps=None, fontsize=10)"
+related:
+  - pheatmap.find_coordinates
+  - pheatmap.heatmap_motor

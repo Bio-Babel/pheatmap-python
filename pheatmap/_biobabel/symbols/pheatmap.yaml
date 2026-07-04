@@ -1,0 +1,305 @@
+id: pheatmap.pheatmap
+import_path: pheatmap.pheatmap.pheatmap
+kind: function
+signature: "pheatmap(mat, color=None, kmeans_k=None, breaks=None, border_color='grey60',
+  cellwidth=None, cellheight=None, scale='none', cluster_rows=True, cluster_cols=True,
+  clustering_distance_rows='euclidean', clustering_distance_cols='euclidean',
+  clustering_method='complete', clustering_callback=identity2, cutree_rows=None,
+  cutree_cols=None, treeheight_row=None, treeheight_col=None, legend=True,
+  legend_breaks=None, legend_labels=None, annotation_row=None, annotation_col=None,
+  annotation=None, annotation_colors=None, annotation_legend=True,
+  annotation_names_row=True, annotation_names_col=True, drop_levels=True,
+  show_rownames=True, show_colnames=True, main=None, fontsize=10, fontsize_row=None,
+  fontsize_col=None, angle_col='270', display_numbers=False, number_format='%.2f',
+  number_color='grey30', fontsize_number=None, gaps_row=None, gaps_col=None,
+  labels_row=None, labels_col=None, filename=None, width=None, height=None,
+  silent=False, na_col='#DDDDDD', use_raster=False, interpolate=False, **kwargs) -> PHeatmap"
+purpose: "Draw a clustered, annotated heatmap from a numeric matrix or DataFrame — the single public entry point of the package."
+description: >
+  Top-level port of the 200-line R function at lines 885-1102 of R's pheatmap.r
+  (pheatmap/pheatmap.py:76). Coerces `mat` to a float array (a DataFrame's index/
+  columns seed `labels_row`/`labels_col`), optionally scales by row/column
+  (`scale_mat`), optionally aggregates rows via k-means (`kmeans_k`, SciPy
+  `kmeans2` with a fixed seed — cluster identity numbers may differ from R's
+  Hartigan-Wong but composition quality matches), clusters rows/columns
+  (`cluster_mat`, unless `cluster_rows`/`cluster_cols` is `False` or is already a
+  precomputed `HClust`), computes colour breaks (`generate_breaks`) and recolours
+  the matrix (`scale_colours`), builds annotation colour maps
+  (`generate_annotation_colours`), and finally composes and draws the gtable via
+  `heatmap_motor`. Accepts the legacy R partial-match aliases `cluster_row`,
+  `cluster_col`, `cutree_row`, `cutree_col` via `**kwargs`.
+parameters:
+  - name: mat
+    type: "np.ndarray | pandas.DataFrame"
+    required: true
+    description: "Numeric matrix to draw. A DataFrame's index/columns become default labels_row/labels_col."
+  - name: color
+    type: "Sequence[str] | None"
+    required: false
+    default: null
+    description: "Palette; defaults to a 100-step reversed RdYlBu ramp (rev(brewer.pal(7,'RdYlBu')) |> colorRampPalette()(100))."
+  - name: kmeans_k
+    type: "int | None"
+    required: false
+    default: null
+    description: "If set, aggregate rows into this many k-means clusters (via scipy.cluster.vq.kmeans2, seed=1245678) before drawing; row labels become 'Cluster: i Size: n'."
+  - name: breaks
+    type: "np.ndarray | None"
+    required: false
+    default: null
+    description: "Explicit colour break points; computed via generate_breaks when omitted."
+  - name: border_color
+    type: "str | None"
+    required: false
+    default: "grey60"
+    description: "Cell border colour; None disables borders (also auto-disabled when cells are smaller than 3 bigpts)."
+  - name: cellwidth
+    type: "float | None"
+    required: false
+    default: null
+  - name: cellheight
+    type: "float | None"
+    required: false
+    default: null
+  - name: scale
+    type: str
+    required: false
+    default: "none"
+    description: "One of 'none', 'row', 'column'; invalid values raise ValueError."
+  - name: cluster_rows
+    type: "bool | HClust"
+    required: false
+    default: true
+    description: "False disables row clustering; True clusters via cluster_mat; pass a precomputed HClust to reuse an existing tree and skip reclustering."
+  - name: cluster_cols
+    type: "bool | HClust"
+    required: false
+    default: true
+  - name: clustering_distance_rows
+    type: "str | np.ndarray"
+    required: false
+    default: "euclidean"
+    description: "Passed to cluster_mat; accepts a distance name or a precomputed pdist-style/square dissimilarity."
+  - name: clustering_distance_cols
+    type: "str | np.ndarray"
+    required: false
+    default: "euclidean"
+  - name: clustering_method
+    type: str
+    required: false
+    default: "complete"
+    description: "Linkage method passed to cluster_mat."
+  - name: clustering_callback
+    type: "Callable[[HClust, np.ndarray], HClust]"
+    required: false
+    default: identity2
+    description: "Called as callback(tree, mat) after clustering to re-order/modify the tree; default identity2 is a no-op."
+  - name: cutree_rows
+    type: "int | None"
+    required: false
+    default: null
+    description: "If clustering is enabled, draw gaps between this many row clusters (via find_gaps)."
+  - name: cutree_cols
+    type: "int | None"
+    required: false
+    default: null
+  - name: treeheight_row
+    type: "float | None"
+    required: false
+    default: null
+    description: "Dendrogram height in bigpts; defaults to 50 when row clustering is active, else 0."
+  - name: treeheight_col
+    type: "float | None"
+    required: false
+    default: null
+  - name: legend
+    type: bool
+    required: false
+    default: true
+  - name: legend_breaks
+    type: "Sequence[float] | None"
+    required: false
+    default: null
+    description: "Explicit legend tick positions; must match legend_labels length or ValueError is raised."
+  - name: legend_labels
+    type: "Sequence[str] | None"
+    required: false
+    default: null
+  - name: annotation_row
+    type: "pandas.DataFrame | None"
+    required: false
+    default: null
+    description: "Row annotation frame; reindexed to labels_row (R semantics: missing names become NA rows)."
+  - name: annotation_col
+    type: "pandas.DataFrame | None"
+    required: false
+    default: null
+  - name: annotation
+    type: "pandas.DataFrame | None"
+    required: false
+    default: null
+    description: "Deprecated alias for annotation_col; using it while annotation_col is unset emits a DeprecationWarning."
+  - name: annotation_colors
+    type: "Mapping[str, Any] | None"
+    required: false
+    default: null
+    description: "Mapping {column -> palette}; entries missing for a column are auto-generated via generate_annotation_colours."
+  - name: annotation_legend
+    type: bool
+    required: false
+    default: true
+  - name: annotation_names_row
+    type: bool
+    required: false
+    default: true
+  - name: annotation_names_col
+    type: bool
+    required: false
+    default: true
+  - name: drop_levels
+    type: bool
+    required: false
+    default: true
+    description: "Drop unused categorical levels when auto-assigning annotation colours."
+  - name: show_rownames
+    type: bool
+    required: false
+    default: true
+  - name: show_colnames
+    type: bool
+    required: false
+    default: true
+  - name: main
+    type: "str | None"
+    required: false
+    default: null
+  - name: fontsize
+    type: float
+    required: false
+    default: 10
+  - name: fontsize_row
+    type: "float | None"
+    required: false
+    default: null
+    description: "Defaults to fontsize."
+  - name: fontsize_col
+    type: "float | None"
+    required: false
+    default: null
+  - name: angle_col
+    type: "str | float"
+    required: false
+    default: "270"
+    description: "One of '0','45','90','270','315'; any other value raises ValueError."
+  - name: display_numbers
+    type: "bool | np.ndarray | pandas.DataFrame"
+    required: false
+    default: false
+    description: "True formats mat with number_format; a matrix/DataFrame of strings must match mat's shape exactly or ValueError is raised."
+  - name: number_format
+    type: str
+    required: false
+    default: "%.2f"
+  - name: number_color
+    type: str
+    required: false
+    default: "grey30"
+  - name: fontsize_number
+    type: "float | None"
+    required: false
+    default: null
+    description: "Defaults to 0.8 * fontsize."
+  - name: gaps_row
+    type: "Sequence[int] | None"
+    required: false
+    default: null
+    description: "Manual gap positions (1-based, in final row order); ignored/overwritten when cutree_rows is set."
+  - name: gaps_col
+    type: "Sequence[int] | None"
+    required: false
+    default: null
+  - name: labels_row
+    type: "Sequence[str] | None"
+    required: false
+    default: null
+  - name: labels_col
+    type: "Sequence[str] | None"
+    required: false
+    default: null
+  - name: filename
+    type: "str | None"
+    required: false
+    default: null
+    description: "One of pdf/png/svg/ps/jpeg/jpg/tiff/bmp by extension; unsupported extensions raise ValueError. Setting this suppresses on-screen drawing."
+  - name: width
+    type: "float | None"
+    required: false
+    default: null
+  - name: height
+    type: "float | None"
+    required: false
+    default: null
+  - name: silent
+    type: bool
+    required: false
+    default: false
+    description: "If True, skip drawing to the active grid device even when filename is unset."
+  - name: na_col
+    type: str
+    required: false
+    default: "#DDDDDD"
+  - name: use_raster
+    type: bool
+    required: false
+    default: false
+    description: "Draw the matrix body as embedded raster tile(s) instead of one vector rect per cell — bounds PDF size for very large matrices."
+  - name: interpolate
+    type: bool
+    required: false
+    default: false
+mutates: "execution_class=pure_function; does not mutate mat/annotation_row/annotation_col in place (reindex/astype return new frames); side effect: draws to the active grid device unless silent=True or filename is set (then writes the file instead); returns_kind=new_object"
+returns: >
+  PHeatmap — a dataclass with tree_row (HClust | None), tree_col (HClust | None),
+  kmeans (dict with centers/cluster/sizes, or None), and gtable (the composed
+  gtable_py.Gtable). Call `.draw()` or `grid_draw(result)` to render it again
+  later; in Jupyter it also auto-renders via `_ipython_display_`.
+requires: []
+writes: []
+examples:
+  - "pheatmap(test)  # test: pandas.DataFrame"
+  - "pheatmap(test, scale='row', clustering_distance_rows='correlation')"
+  - "pheatmap(test, kmeans_k=2, silent=True)"
+  - "pheatmap(test, annotation_col=annotation_col, annotation_colors=ann_colors, main='Title')"
+  - "pheatmap(test, cluster_rows=False, gaps_row=[10, 14])"
+  - "pheatmap(big_mat, filename='out.pdf', width=6, height=4, use_raster=True)"
+failure_fixes:
+  - when: "scale is not one of 'none', 'row', 'column'"
+    suggest:
+      - "pass scale='none', 'row', or 'column'"
+    explanation: "Raises ValueError('scale argument should take values: ...') from scale_mat."
+  - when: "display_numbers is passed as a matrix/DataFrame whose shape does not match mat"
+    suggest:
+      - "pass a matrix of strings with the exact same shape as mat, or use display_numbers=True/False instead"
+    explanation: "Raises ValueError('If display_numbers provided as matrix, its dimensions have to match with mat')."
+  - when: "angle_col is not one of '0', '45', '90', '270', '315'"
+    suggest:
+      - "use one of the five supported angle strings"
+    explanation: "Raises ValueError('angle_col must be one of ...')."
+  - when: "legend_breaks and legend_labels are both given with different lengths"
+    suggest:
+      - "make legend_breaks and legend_labels the same length"
+    explanation: "Raises ValueError('Lengths of legend_breaks and legend_labels must be the same')."
+  - when: "filename has an extension other than pdf/svg/ps/png/jpeg/jpg/tiff/bmp"
+    suggest:
+      - "use one of the supported file extensions"
+    explanation: "Raised by heatmap_motor's internal file writer: ValueError('File type should be: pdf, png, bmp, jpg, tiff')."
+related:
+  - pheatmap.PHeatmap
+  - pheatmap.grid_draw
+  - pheatmap.cluster_mat
+  - pheatmap.HClust
+  - pheatmap.scale_mat
+  - pheatmap.generate_breaks
+  - pheatmap.scale_colours
+  - pheatmap.generate_annotation_colours
+  - pheatmap.heatmap_motor

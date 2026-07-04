@@ -1,0 +1,56 @@
+id: pheatmap.cluster_mat
+import_path: pheatmap._cluster.cluster_mat
+kind: function
+signature: "cluster_mat(mat: np.ndarray, distance: str | np.ndarray, method: str, labels: Sequence[str] | None = None) -> HClust"
+purpose: "Cluster the rows of mat with a distance/linkage combination, mirroring R's stats::hclust dispatch that pheatmap() uses internally for row/column clustering."
+description: >
+  pheatmap/_cluster.py:118. Accepts either a named distance ('correlation',
+  'euclidean', 'maximum', 'manhattan', 'canberra', 'binary', 'minkowski') or a
+  precomputed dissimilarity (1-D condensed vector as from scipy.spatial.distance.pdist,
+  or a square 2-D matrix). 'correlation' computes 1 - corrcoef, matching
+  pheatmap's R-specific distance option (not one of stats::dist's built-ins).
+  For method in {'ward.D', 'ward'} the input distances are square-rooted before
+  SciPy's ward linkage and the resulting heights are squared back, replicating
+  R's ward.D/legacy-ward convention of treating input distances as pre-squared
+  (SciPy's own 'ward' matches R's 'ward.D2' directly). pheatmap() calls this once
+  for rows (on mat) and once for columns (on mat.T) when cluster_rows/cluster_cols
+  is True.
+parameters:
+  - name: mat
+    type: np.ndarray
+    required: true
+    description: "Numeric matrix whose rows are the objects to cluster."
+  - name: distance
+    type: "str | np.ndarray"
+    required: true
+    description: "One of 'correlation','euclidean','maximum','manhattan','canberra','binary','minkowski', or a precomputed condensed/square dissimilarity."
+  - name: method
+    type: str
+    required: true
+    description: "Linkage method: one of 'ward','ward.D','ward.D2','single','complete','average','mcquitty','median','centroid'."
+  - name: labels
+    type: "Sequence[str] | None"
+    required: false
+    default: null
+    description: "Optional row labels attached to the returned HClust."
+mutates: "execution_class=pure_function; no mutation of mat; returns_kind=new_object"
+returns: "HClust"
+requires: []
+writes: ["result.hclust"]
+examples:
+  - "cluster_mat(mat, distance='euclidean', method='complete')"
+  - "cluster_mat(mat, distance='correlation', method='average')"
+  - "cluster_mat(mat, distance=precomputed_square_distance_matrix, method='complete')"
+failure_fixes:
+  - when: "method is not one of the supported linkage methods"
+    suggest:
+      - "pass one of 'ward','ward.D','ward.D2','single','complete','average','mcquitty','median','centroid'"
+    explanation: "Raises ValueError('clustering method has to one form the list: ...')."
+  - when: "distance is a string not in the supported distance list"
+    suggest:
+      - "pass one of 'correlation','euclidean','maximum','manhattan','canberra','binary','minkowski', or a precomputed dissimilarity array/matrix"
+    explanation: "Raises ValueError('distance has to be a dissimilarity structure as produced by dist or one measure form the list: ...')."
+related:
+  - pheatmap.HClust
+  - pheatmap.find_gaps
+  - pheatmap.pheatmap

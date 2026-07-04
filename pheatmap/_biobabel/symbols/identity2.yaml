@@ -1,0 +1,24 @@
+id: pheatmap.identity2
+import_path: pheatmap._utils.identity2
+kind: function
+signature: "identity2(x: Any, *args: Any, **kwargs: Any) -> Any"
+purpose: "Return x unchanged, ignoring any extra positional/keyword arguments; the default clustering_callback in pheatmap()."
+description: >
+  pheatmap/_utils.py:51. pheatmap() calls `clustering_callback(tree, mat)`
+  after clustering each axis; identity2 makes this a no-op by default. Pass a
+  custom callable with the same `(tree, mat) -> HClust` shape to reorder or
+  otherwise modify the tree (see pheatmap.pheatmap's clustering_callback
+  parameter).
+parameters:
+  - name: x
+    type: Any
+    required: true
+mutates: "execution_class=pure_function; no mutation; returns_kind=none"
+returns: "x, unchanged."
+requires: []
+writes: []
+examples:
+  - "identity2(some_object, 'ignored', kw='ignored')  # returns some_object"
+related:
+  - pheatmap.pheatmap
+  - pheatmap.HClust

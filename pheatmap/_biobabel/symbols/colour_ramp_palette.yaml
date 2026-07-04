@@ -1,0 +1,36 @@
+id: pheatmap.colour_ramp_palette
+import_path: pheatmap._colours.colour_ramp_palette
+kind: function
+signature: "colour_ramp_palette(colors: Sequence[str], bias: float = 1.0) -> Callable[[int], list[str]]"
+purpose: "R's grDevices::colorRampPalette analogue: builds a callable that interpolates n hex colours across the given anchor colours."
+description: >
+  pheatmap/_colours.py:29. Wraps the `scales` package's colour_ramp. The
+  returned callable: n<=0 returns []; n==1 returns the ramp midpoint (0.5);
+  otherwise n evenly spaced hex strings across [0, 1]. Used internally to
+  build pheatmap()'s default palette (rev(brewer.pal(7,'RdYlBu')) ramped to
+  100 steps) and by generate_annotation_colours/draw_annotation_legend for
+  continuous annotation colour ramps. `bias` is accepted for signature parity
+  with R but is currently unused. R-only colour names (e.g. 'firebrick3') are
+  not understood — use hex codes or matplotlib-standard names (documented
+  deviation, docs/index.md "Parity with R").
+parameters:
+  - name: colors
+    type: "Sequence[str]"
+    required: true
+    description: "Two-or-more hex/CSS colour names that anchor the ramp."
+  - name: bias
+    type: float
+    required: false
+    default: 1.0
+    description: "Unused; present for signature parity with R's colorRampPalette."
+mutates: "execution_class=pure_function; returns a new closure; returns_kind=new_object"
+returns: "Callable[[int], list[str]] — call with n to get n interpolated hex colour strings."
+requires: []
+writes: []
+examples:
+  - "colour_ramp_palette(['navy', 'white', '#CD2626'])(50)"
+  - "colour_ramp_palette(['red', 'blue'])(7)"
+related:
+  - pheatmap.colorRampPalette
+  - pheatmap.generate_annotation_colours
+  - pheatmap.pheatmap

@@ -1,0 +1,22 @@
+id: pheatmap.scale_rows
+import_path: pheatmap._scale.scale_rows
+kind: function
+signature: "scale_rows(x: np.ndarray) -> np.ndarray"
+purpose: "Centre each row at zero and scale by its sample standard deviation (ddof=1)."
+description: >
+  pheatmap/_scale.py:13. Computes `(x - nanmean(x, axis=1)) / nanstd(x, axis=1,
+  ddof=1)`. NaNs are ignored in the mean/sd computation and propagate to the
+  output. Used by scale_mat for scale='row', and (transposed) for scale='column'.
+parameters:
+  - name: x
+    type: np.ndarray
+    required: true
+    description: "Numeric 2-D array; NaNs are ignored in the mean/sd computation."
+mutates: "execution_class=pure_function; no mutation; returns_kind=new_object"
+returns: "np.ndarray — same shape as x, each row zero-mean and unit-sd (ddof=1)."
+requires: []
+writes: []
+examples:
+  - "scale_rows(np.array([[1.0, 2.0, 3.0], [4.0, 8.0, 12.0]]))"
+related:
+  - pheatmap.scale_mat

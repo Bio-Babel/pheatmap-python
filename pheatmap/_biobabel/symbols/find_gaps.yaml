@@ -1,0 +1,31 @@
+id: pheatmap.find_gaps
+import_path: pheatmap._cluster.find_gaps
+kind: function
+signature: "find_gaps(tree: HClust, cutree_n: int) -> np.ndarray"
+purpose: "Return 0-based positions in the cluster-ordered leaf vector where the cluster label changes, i.e. where pheatmap() should draw a gap between clusters."
+description: >
+  pheatmap/_cluster.py:187. Cuts `tree.linkage` into `cutree_n` clusters via
+  scipy.cluster.hierarchy.fcluster(criterion='maxclust'), reorders the cluster
+  labels by `tree.order`, and returns the indices where consecutive labels
+  differ. pheatmap() calls this when `cutree_rows`/`cutree_cols` is set (and
+  clustering for that axis is active), overwriting any explicit `gaps_row`/
+  `gaps_col` for that axis.
+parameters:
+  - name: tree
+    type: HClust
+    required: true
+    description: "An HClust, typically produced by cluster_mat."
+  - name: cutree_n
+    type: int
+    required: true
+    description: "Target number of clusters."
+mutates: "execution_class=pure_function; no mutation; returns_kind=new_object"
+returns: "np.ndarray of int gap positions; empty when cutree_n == 1 (n clusters yields n-1 gaps)."
+requires: ["result.hclust"]
+writes: []
+examples:
+  - "hc = cluster_mat(mat, distance='euclidean', method='complete')\nfind_gaps(hc, cutree_n=3)"
+related:
+  - pheatmap.cluster_mat
+  - pheatmap.HClust
+  - pheatmap.pheatmap

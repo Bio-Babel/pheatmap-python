@@ -1,0 +1,94 @@
+id: pheatmap.lo
+import_path: pheatmap._layout.lo
+kind: function
+signature: "lo(rown, coln, nrow, ncol, cellheight, cellwidth, treeheight_col, treeheight_row, legend, annotation_row, annotation_col, annotation_colors, annotation_legend, annotation_names_row, annotation_names_col, main, fontsize, fontsize_row, fontsize_col, angle_col, gaps_row, gaps_col, **kwargs) -> dict[str, Any]"
+purpose: "Compute the enclosing 5-row x 6-column gtable skeleton (widths/heights) and the minimum cell dimension, before heatmap_motor populates it with grobs."
+description: >
+  pheatmap/_layout.py:105. Measures label/legend/annotation/title extents
+  (using grid_py string_width/string_height/text_grob against the active
+  device) to size each gtable row/column: [treeheight_row, annot_row_width,
+  mat_width, rown_width, legend_width, annot_legend_width] x [main_height,
+  treeheight_col, annot_col_height, mat_height, coln_height]. When
+  cellwidth/cellheight are given, the matrix block is sized exactly
+  (cellwidth*ncol + gaps); otherwise it fills the remaining npc space. Called
+  once per pheatmap() invocation by heatmap_motor, which then adds grobs at
+  fixed (row, col) cells of the returned gtable.
+parameters:
+  - name: rown
+    type: "Sequence[str] | None"
+    required: true
+    description: "Row labels (drives row-name column width)."
+  - name: coln
+    type: "Sequence[str] | None"
+    required: true
+    description: "Column labels (drives column-name row height)."
+  - name: nrow
+    type: int
+    required: true
+  - name: ncol
+    type: int
+    required: true
+  - name: cellheight
+    type: "float | None"
+    required: true
+  - name: cellwidth
+    type: "float | None"
+    required: true
+  - name: treeheight_col
+    type: float
+    required: true
+  - name: treeheight_row
+    type: float
+    required: true
+  - name: legend
+    type: Any
+    required: true
+    description: "The legend dict (label -> value) or None/NaN; drives legend column width."
+  - name: annotation_row
+    type: "pandas.DataFrame | None"
+    required: true
+  - name: annotation_col
+    type: "pandas.DataFrame | None"
+    required: true
+  - name: annotation_colors
+    type: Any
+    required: true
+  - name: annotation_legend
+    type: bool
+    required: true
+  - name: annotation_names_row
+    type: bool
+    required: true
+  - name: annotation_names_col
+    type: bool
+    required: true
+  - name: main
+    type: "str | None"
+    required: true
+  - name: fontsize
+    type: float
+    required: true
+  - name: fontsize_row
+    type: float
+    required: true
+  - name: fontsize_col
+    type: float
+    required: true
+  - name: angle_col
+    type: float
+    required: true
+  - name: gaps_row
+    type: "Sequence[int] | None"
+    required: true
+  - name: gaps_col
+    type: "Sequence[int] | None"
+    required: true
+mutates: "execution_class=builder; reads the active grid device to resolve text metrics (must be open, e.g. via grid_py.grid_newpage()); no mutation of inputs; returns_kind=new_object"
+returns: "dict — {'gt': gtable_py.Gtable skeleton (no grobs yet), 'mindim': float — min(cell width, cell height) in bigpts, used by heatmap_motor to decide whether to suppress cell borders when cells are very small}."
+requires: []
+writes: []
+examples:
+  - "lo(rown=labels_row, coln=labels_col, nrow=20, ncol=10, cellwidth=None, cellheight=None, treeheight_col=50.0, treeheight_row=50.0, legend=legend_dict, annotation_col=None, annotation_row=None, annotation_colors=None, annotation_legend=True, annotation_names_row=True, annotation_names_col=True, main=None, fontsize=10, fontsize_row=10, fontsize_col=10, angle_col=270.0, gaps_row=None, gaps_col=None)"
+related:
+  - pheatmap.find_coordinates
+  - pheatmap.heatmap_motor

@@ -1,0 +1,44 @@
+id: pheatmap.draw_annotation_names
+import_path: pheatmap._grobs.draw_annotation_names
+kind: function
+signature: "draw_annotation_names(annotations: pandas.DataFrame, fontsize: float, horizontal: bool, hjust_col: float = 0.0, vjust_col: float = 0.5, angle_col: float = 0.0) -> grid_py.Grob"
+purpose: "Render bold track-name labels (the annotation DataFrame's column names) alongside draw_annotations' coloured tracks."
+description: >
+  pheatmap/_grobs.py:451. Uses `annotations.columns` as the label text (not
+  the data itself); vertical spacing mirrors draw_annotations' per-track
+  rhythm (fontsize bigpts + 2bigpts). `horizontal=True` places names beside
+  the column-annotation tracks; `horizontal=False` places them beside the
+  row-annotation tracks with hjust_col/vjust_col/angle_col controlling
+  rotation the same way pheatmap()'s angle_col does for column labels.
+parameters:
+  - name: annotations
+    type: pandas.DataFrame
+    required: true
+    description: "The annotation_col or annotation_row DataFrame; only .columns is used as label text."
+  - name: fontsize
+    type: float
+    required: true
+  - name: horizontal
+    type: bool
+    required: true
+  - name: hjust_col
+    type: float
+    required: false
+    default: 0.0
+  - name: vjust_col
+    type: float
+    required: false
+    default: 0.5
+  - name: angle_col
+    type: float
+    required: false
+    default: 0.0
+mutates: "execution_class=pure_function; builds a new grob; returns_kind=new_object"
+returns: "grid_py bold text grob."
+requires: []
+writes: []
+examples:
+  - "draw_annotation_names(annotation_col, fontsize=10, horizontal=True)"
+related:
+  - pheatmap.draw_annotations
+  - pheatmap.heatmap_motor

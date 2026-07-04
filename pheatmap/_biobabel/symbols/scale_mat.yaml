@@ -1,0 +1,33 @@
+id: pheatmap.scale_mat
+import_path: pheatmap._scale.scale_mat
+kind: function
+signature: "scale_mat(mat: np.ndarray, scale: str) -> np.ndarray"
+purpose: "Scale a matrix by row, column, or neither — the scale= dispatch used internally by pheatmap()."
+description: >
+  pheatmap/_scale.py:32. scale='none' returns a float copy of mat unchanged.
+  scale='row' calls scale_rows(mat); scale='column' calls
+  scale_rows(mat.T).T. Any other value raises ValueError.
+parameters:
+  - name: mat
+    type: np.ndarray
+    required: true
+  - name: scale
+    type: str
+    required: true
+    description: "One of 'none', 'row', 'column'."
+mutates: "execution_class=pure_function; no mutation of mat; returns_kind=new_object"
+returns: "np.ndarray — same shape as mat."
+requires: []
+writes: []
+examples:
+  - "scale_mat(mat_arr, 'row')"
+  - "scale_mat(mat_arr, 'column')"
+failure_fixes:
+  - when: "scale is not one of 'none', 'row', 'column'"
+    suggest:
+      - "pass scale='none', 'row', or 'column'"
+    explanation: "Raises ValueError(\"scale argument should take values: 'none', 'row' or 'column'\")."
+related:
+  - pheatmap.scale_rows
+  - pheatmap.generate_breaks
+  - pheatmap.pheatmap

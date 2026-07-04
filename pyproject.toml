@@ -63,6 +63,8 @@ Repository    = "https://github.com/Bio-Babel/pheatmap-python"
 Issues        = "https://github.com/Bio-Babel/pheatmap-python/issues"
 Documentation = "https://github.com/Bio-Babel/pheatmap-python#readme"
 
+[project.entry-points."biobabel.manifest"]
+pheatmap = "pheatmap._biobabel:get_manifest"
 [tool.hatch.build.targets.wheel]
 packages = ["pheatmap"]
 
@@ -82,3 +84,6 @@ exclude = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.biobabel]
+contract_class = "analysis"

@@ -1,0 +1,43 @@
+id: pheatmap.draw_annotations
+import_path: pheatmap._grobs.draw_annotations
+kind: function
+signature: "draw_annotations(converted_annotations: np.ndarray, border_color: str | None, gaps: Sequence[int] | None, fontsize: float, horizontal: bool) -> grid_py.Grob"
+purpose: "Render one row of coloured annotation-track rectangles per observation, from an already-converted colour matrix."
+description: >
+  pheatmap/_grobs.py:402. Expects `converted_annotations` to already be a
+  matrix of hex colours (the output of convert_annotations) — this function
+  only positions and fills rectangles, it does not itself map annotation
+  values to colours. `horizontal=True` draws column annotation tracks (stacked
+  above the matrix); `horizontal=False` draws row annotation tracks (stacked
+  left of the matrix, via a coordinate flip). Track height/width is
+  `fontsize` bigpts per track with 2bigpts spacing (matches
+  draw_annotation_names' vertical rhythm). heatmap_motor calls this once for
+  annotation_col and once for annotation_row.
+parameters:
+  - name: converted_annotations
+    type: np.ndarray
+    required: true
+    description: "Hex colour matrix, shape (n_observations, n_tracks); from convert_annotations."
+  - name: border_color
+    type: "str | None"
+    required: true
+  - name: gaps
+    type: "Sequence[int] | None"
+    required: true
+  - name: fontsize
+    type: float
+    required: true
+    description: "Also used as the per-track band thickness in bigpts."
+  - name: horizontal
+    type: bool
+    required: true
+mutates: "execution_class=pure_function; builds a new grob; returns_kind=new_object"
+returns: "grid_py rect grob."
+requires: []
+writes: []
+examples:
+  - "conv = convert_annotations(annotation_col, annotation_colors)\ndraw_annotations(conv, border_color='grey60', gaps=None, fontsize=10, horizontal=True)"
+related:
+  - pheatmap.convert_annotations
+  - pheatmap.draw_annotation_names
+  - pheatmap.heatmap_motor

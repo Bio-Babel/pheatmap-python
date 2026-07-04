@@ -1,0 +1,62 @@
+id: pheatmap.draw_matrix
+import_path: pheatmap._grobs.draw_matrix
+kind: function
+signature: "draw_matrix(matrix, border_color, gaps_rows, gaps_cols, fmat, fontsize_number, number_color, draw_numbers, use_raster=False, interpolate=False) -> grid_py.GTree"
+purpose: "Render the coloured matrix body as a grid of coloured rectangles (or embedded raster tile(s)) and optional per-cell value text."
+description: >
+  pheatmap/_grobs.py:226. Vector path (use_raster=False, default): one
+  rect_grob per cell, filled from `matrix` (hex colours), positioned via
+  find_coordinates for both axes. Raster path (use_raster=True): delegates to
+  the private `_draw_matrix_raster`, which emits one raster_grob per
+  (row-chunk, col-chunk) pair split at `gaps_rows`/`gaps_cols` (so gap regions
+  stay empty rather than smearing) — this keeps output file size bounded for
+  very large matrices (mirrors ComplexHeatmap::Heatmap(use_raster=TRUE));
+  per-cell borders are suppressed in this mode. When `draw_numbers` is True,
+  `fmat` (a same-shape string matrix) is overlaid as text_grob labels in both
+  paths.
+parameters:
+  - name: matrix
+    type: np.ndarray
+    required: true
+    description: "Matrix of hex colour strings, e.g. from scale_colours."
+  - name: border_color
+    type: "str | None"
+    required: true
+    description: "Cell border colour; ignored in raster mode."
+  - name: gaps_rows
+    type: "Sequence[int] | None"
+    required: true
+  - name: gaps_cols
+    type: "Sequence[int] | None"
+    required: true
+  - name: fmat
+    type: np.ndarray
+    required: true
+    description: "String matrix of per-cell display numbers; only used when draw_numbers is True."
+  - name: fontsize_number
+    type: float
+    required: true
+  - name: number_color
+    type: str
+    required: true
+  - name: draw_numbers
+    type: bool
+    required: true
+  - name: use_raster
+    type: bool
+    required: false
+    default: false
+  - name: interpolate
+    type: bool
+    required: false
+    default: false
+mutates: "execution_class=pure_function; builds a new grob tree; returns_kind=new_object"
+returns: "grid_py.GTree"
+requires: []
+writes: []
+examples:
+  - "draw_matrix(colour_matrix, border_color='grey60', gaps_rows=None, gaps_cols=None, fmat=fmat, fontsize_number=8.0, number_color='grey30', draw_numbers=False)"
+related:
+  - pheatmap.scale_colours
+  - pheatmap.find_coordinates
+  - pheatmap.heatmap_motor

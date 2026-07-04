@@ -1,0 +1,36 @@
+id: pheatmap.generate_breaks
+import_path: pheatmap._breaks.generate_breaks
+kind: function
+signature: "generate_breaks(x: np.ndarray, n: int, center: bool = False) -> np.ndarray"
+purpose: "Return n+1 break points spanning x, used to bin numeric values into n colour bins before mapping to a palette."
+description: >
+  pheatmap/_breaks.py:13. With center=False, breaks run linearly from
+  nanmin(x) to nanmax(x). With center=True, breaks are symmetric around zero
+  with magnitude max(abs(nanmin(x)), abs(nanmax(x))) — pheatmap() uses
+  center=True only when `scale != 'none'` and no explicit `breaks` was given
+  (pheatmap/pheatmap.py:246-249), and center=False for the final
+  legend/colour breaks otherwise (pheatmap.py:347-348).
+parameters:
+  - name: x
+    type: np.ndarray
+    required: true
+    description: "Array-like numeric data; NaNs are ignored (nanmin/nanmax)."
+  - name: n
+    type: int
+    required: true
+    description: "Number of colour bins; the result has n+1 points."
+  - name: center
+    type: bool
+    required: false
+    default: false
+    description: "If True, breaks are symmetric around zero."
+mutates: "execution_class=pure_function; no mutation; returns_kind=new_object"
+returns: "np.ndarray — strictly increasing, length n+1."
+requires: []
+writes: []
+examples:
+  - "generate_breaks(mat_arr, n=len(color))"
+  - "generate_breaks(scaled_mat_arr, n=len(color), center=True)  # after scale='row'/'column'"
+related:
+  - pheatmap.scale_colours
+  - pheatmap.pheatmap

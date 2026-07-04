@@ -1,0 +1,40 @@
+id: pheatmap.PHeatmap
+import_path: pheatmap._pheatmap_object.PHeatmap
+kind: class
+signature: "PHeatmap(tree_row: HClust | None, tree_col: HClust | None, kmeans: dict | None, gtable: Any)"
+purpose: "Result container returned by pheatmap(): holds the row/column dendrogram trees, optional k-means summary, and the composed gtable, and knows how to render itself."
+description: >
+  Plain dataclass (pheatmap/_pheatmap_object.py:16) that is pheatmap.pheatmap's
+  return type. `.draw()` calls grid_py's grid_draw on `self.gtable`.
+  `_ipython_display_` renders a PNG via a CairoRenderer and displays it inline
+  in Jupyter (IPython-only path, not exercised by pheatmap() itself, which
+  already draws to the device before returning). `__repr__` summarises whether
+  tree_row/tree_col/kmeans are populated without dumping the full gtable.
+parameters:
+  - name: tree_row
+    type: "HClust | None"
+    required: true
+    description: "Row dendrogram, or None when rows were not clustered."
+  - name: tree_col
+    type: "HClust | None"
+    required: true
+  - name: kmeans
+    type: "dict | None"
+    required: true
+    description: "{'centers', 'cluster', 'sizes'} when kmeans_k was used in pheatmap(), else None."
+  - name: gtable
+    type: "gtable_py.Gtable"
+    required: true
+    description: "The fully composed gtable produced by heatmap_motor."
+mutates: "execution_class=data_container; constructing an instance has no side effects; .draw() has the side effect of drawing gtable to the active grid device; returns_kind=new_object"
+returns: "self (PHeatmap instance)"
+requires: []
+writes: []
+examples:
+  - "res = pheatmap(mat, silent=True)"
+  - "res.draw()"
+  - "res.tree_row.order  # dendrogram leaf order, if rows were clustered"
+related:
+  - pheatmap.pheatmap
+  - pheatmap.grid_draw
+  - pheatmap.HClust

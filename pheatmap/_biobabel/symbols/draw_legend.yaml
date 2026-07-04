@@ -1,0 +1,36 @@
+id: pheatmap.draw_legend
+import_path: pheatmap._grobs.draw_legend
+kind: function
+signature: "draw_legend(color: Sequence[str], breaks: np.ndarray, legend: Mapping[str, float] | Sequence[float], **kwargs) -> grid_py.GTree"
+purpose: "Render the colour scale legend: a vertical colour gradient strip with tick labels at the given legend positions."
+description: >
+  pheatmap/_grobs.py:336. Strips the -Inf/+Inf sentinel colours that
+  pheatmap() prepends/appends to `color` and `breaks` (see pheatmap.pheatmap's
+  break-augmentation step) before mapping, so the visible gradient lines up
+  with the finite break range. Height is min(1npc, 150bigpts). `legend` may be
+  a {label: value} dict (from pheatmap()'s default or explicit
+  legend_breaks/legend_labels) or a plain sequence of numeric positions.
+  `**kwargs` are forwarded into the tick-label Gpar.
+parameters:
+  - name: color
+    type: "Sequence[str]"
+    required: true
+    description: "The (sentinel-augmented) palette pheatmap() used to colour the matrix."
+  - name: breaks
+    type: np.ndarray
+    required: true
+    description: "The (sentinel-augmented) break points."
+  - name: legend
+    type: "Mapping[str, float] | Sequence[float]"
+    required: true
+    description: "Tick label -> value mapping, or a plain sequence of tick values."
+mutates: "execution_class=pure_function; builds a new grob tree; returns_kind=new_object"
+returns: "grid_py.GTree — gradient rect + tick-label text."
+requires: []
+writes: []
+examples:
+  - "draw_legend(color, breaks, legend={'−2': -2.0, '0': 0.0, '2': 2.0})"
+related:
+  - pheatmap.generate_breaks
+  - pheatmap.heatmap_motor
+  - pheatmap.pheatmap

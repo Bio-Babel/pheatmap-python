@@ -1,0 +1,37 @@
+id: pheatmap.scale_vec_colours
+import_path: pheatmap._colours.scale_vec_colours
+kind: function
+signature: "scale_vec_colours(x: np.ndarray, col: Sequence[str], breaks: np.ndarray, na_col: str) -> np.ndarray"
+purpose: "Vectorised value -> colour lookup for a 1-D array using R-style cut(x, breaks, include.lowest=TRUE) binning."
+description: >
+  pheatmap/_colours.py:88. Bins each value of `x` into one of len(breaks)-1
+  bins (R's include.lowest=TRUE semantics: a value equal to the lowest finite
+  break falls in bin 0, one equal to the highest falls in the last bin), then
+  looks up `col[bin]`. NaN or out-of-range values get `na_col`. `scale_colours`
+  is the 2-D matrix wrapper around this function.
+parameters:
+  - name: x
+    type: np.ndarray
+    required: true
+    description: "1-D numeric array of values to colour."
+  - name: col
+    type: "Sequence[str]"
+    required: true
+    description: "Palette; must have len(breaks) - 1 entries to align with the bins."
+  - name: breaks
+    type: np.ndarray
+    required: true
+    description: "Strictly increasing break points, e.g. from generate_breaks."
+  - name: na_col
+    type: str
+    required: true
+    description: "Fallback colour for NaN or out-of-range values."
+mutates: "execution_class=pure_function; no mutation; returns_kind=new_object"
+returns: "np.ndarray of hex colour strings, same length as x."
+requires: []
+writes: []
+examples:
+  - "scale_vec_colours(np.array([0.0, 0.5, 1.0]), ['#000000','#808080','#FFFFFF'], breaks=np.linspace(0,1,4), na_col='#FF0000')"
+related:
+  - pheatmap.scale_colours
+  - pheatmap.generate_breaks

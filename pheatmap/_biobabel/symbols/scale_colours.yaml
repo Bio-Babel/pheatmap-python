@@ -1,0 +1,37 @@
+id: pheatmap.scale_colours
+import_path: pheatmap._colours.scale_colours
+kind: function
+signature: "scale_colours(mat: np.ndarray, col: Sequence[str], breaks: np.ndarray, na_col: str) -> np.ndarray"
+purpose: "Map a numeric matrix to a matrix of hex colour strings; the recolouring step pheatmap() applies to the (possibly scaled/clustered) matrix before drawing."
+description: >
+  pheatmap/_colours.py:104. Ravels `mat` in column-major (Fortran) order,
+  applies scale_vec_colours, and reshapes back — matching R's `as.vector(mat)`
+  column-major flattening convention used throughout the drawing code.
+  pheatmap() calls this once, after row/column clustering and break
+  computation, to produce the colour matrix passed to heatmap_motor /
+  draw_matrix.
+parameters:
+  - name: mat
+    type: np.ndarray
+    required: true
+    description: "Numeric matrix (post scale/cluster reordering)."
+  - name: col
+    type: "Sequence[str]"
+    required: true
+  - name: breaks
+    type: np.ndarray
+    required: true
+  - name: na_col
+    type: str
+    required: true
+mutates: "execution_class=pure_function; no mutation; returns_kind=new_object"
+returns: "np.ndarray of hex colour strings, same shape as mat."
+requires: []
+writes: []
+examples:
+  - "scale_colours(mat_arr, col=color, breaks=breaks, na_col='#DDDDDD')"
+related:
+  - pheatmap.scale_vec_colours
+  - pheatmap.generate_breaks
+  - pheatmap.draw_matrix
+  - pheatmap.pheatmap

@@ -1,0 +1,28 @@
+id: pheatmap.colorRampPalette
+import_path: pheatmap._colours.colorRampPalette
+kind: function
+signature: "colorRampPalette(colors: Sequence[str], bias: float = 1.0) -> Callable[[int], list[str]]"
+purpose: "camelCase alias of colour_ramp_palette, kept for users porting R code that calls grDevices::colorRampPalette."
+description: >
+  pheatmap/_colours.py:59 (`colorRampPalette = colour_ramp_palette`). Identical
+  implementation and behaviour to pheatmap.colour_ramp_palette; see that
+  symbol for the full description. Exists purely so R-side call sites can be
+  ported with an unchanged function name.
+parameters:
+  - name: colors
+    type: "Sequence[str]"
+    required: true
+    description: "Two-or-more hex/CSS colour names that anchor the ramp."
+  - name: bias
+    type: float
+    required: false
+    default: 1.0
+    description: "Unused; present for signature parity with R."
+mutates: "execution_class=pure_function; returns a new closure; returns_kind=new_object"
+returns: "Callable[[int], list[str]] — call with n to get n interpolated hex colour strings."
+requires: []
+writes: []
+examples:
+  - "colorRampPalette(['red', 'blue'])(7)"
+related:
+  - pheatmap.colour_ramp_palette

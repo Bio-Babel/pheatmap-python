@@ -1,0 +1,46 @@
+id: pheatmap.HClust
+import_path: pheatmap._cluster.HClust
+kind: class
+signature: "HClust(merge: np.ndarray, order: np.ndarray, height: np.ndarray, labels: Sequence[str] | None, linkage: np.ndarray)"
+purpose: "Minimal R hclust-like, frozen container returned by cluster_mat and consumed by find_gaps, draw_dendrogram, and pheatmap's cluster_rows/cluster_cols."
+description: >
+  pheatmap/_cluster.py:64. `merge` is an (n-1, 2) int array using R's 1-based
+  convention (negative entries reference original observations `-i` ->
+  observation i; positive entries reference previously formed clusters).
+  `order` is a 0-based leaf-order permutation. `height` has length n-1.
+  `linkage` is the underlying SciPy linkage matrix, kept so find_gaps can call
+  scipy.cluster.hierarchy.fcluster on it. Supports `hc['order']`-style item
+  access via `__getitem__` for parity with R's `hc$order`.
+parameters:
+  - name: merge
+    type: np.ndarray
+    required: true
+    description: "(n-1, 2) int array of merge steps, R 1-based convention."
+  - name: order
+    type: np.ndarray
+    required: true
+    description: "0-based permutation giving the dendrogram leaf order."
+  - name: height
+    type: np.ndarray
+    required: true
+    description: "Length n-1 array of merge heights."
+  - name: labels
+    type: "Sequence[str] | None"
+    required: true
+    description: "Row labels, or None if unnamed."
+  - name: linkage
+    type: np.ndarray
+    required: true
+    description: "SciPy linkage matrix; used by find_gaps via fcluster."
+mutates: "execution_class=data_container; frozen dataclass, immutable after construction; returns_kind=new_object"
+returns: "self (HClust instance)"
+requires: []
+writes: []
+examples:
+  - "hc = cluster_mat(mat, distance='euclidean', method='complete')"
+  - "hc['order']  # R-style item access"
+  - "pheatmap(mat, cluster_rows=hc)  # reuse a precomputed tree"
+related:
+  - pheatmap.cluster_mat
+  - pheatmap.find_gaps
+  - pheatmap.pheatmap

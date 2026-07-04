@@ -1,0 +1,44 @@
+id: pheatmap.generate_annotation_colours
+import_path: pheatmap._colours.generate_annotation_colours
+kind: function
+signature: "generate_annotation_colours(annotation: pandas.DataFrame | Mapping[str, pandas.Series], annotation_colors: Any, drop: bool = True) -> dict"
+purpose: "Fill in missing entries of annotation_colors so every annotation column has a palette, auto-assigning colours the way R's pheatmap does."
+description: >
+  pheatmap/_colours.py:186. Columns already present in `annotation_colors`
+  are left untouched. For each remaining categorical/object column, a subset
+  of a hue-based qualitative palette (scales' dscale(hue_pal(l=75))) is
+  sampled (seeded `random.Random(3453)`, matching R's set.seed(3453) — the
+  exact seed and sampling order are locked by
+  tests/fixtures/annotation_palette_seed3453.json) and assigned to that
+  column's levels; consumed palette slots are not reused by later columns.
+  For each remaining numeric column, a 4-colour sequential ColorBrewer
+  palette is assigned, cycling through 18 Brewer palette names
+  (Blues, Greens, Oranges, ... YlOrRd) in order across columns. `drop=True`
+  drops unused categorical levels before counting/assigning. pheatmap() calls
+  this once with the concatenation of annotation_row and annotation_col
+  columns whenever either is supplied.
+parameters:
+  - name: annotation
+    type: "pandas.DataFrame | Mapping[str, pandas.Series]"
+    required: true
+    description: "A DataFrame, or a {name: Series} mapping (R's concatenation of annotation_col and annotation_row)."
+  - name: annotation_colors
+    type: Any
+    required: true
+    description: "Existing colour mapping; may be None/NaN for 'nothing supplied yet'."
+  - name: drop
+    type: bool
+    required: false
+    default: true
+    description: "If True, drop unused categorical factor levels before assigning colours."
+mutates: "execution_class=pure_function; does not mutate the input annotation_colors mapping (copies it); returns_kind=new_object"
+returns: "dict — {column name -> palette}, a {level: colour} dict for categorical columns or a 4-colour list for numeric columns, for every column in annotation."
+requires: []
+writes: []
+examples:
+  - "generate_annotation_colours(pandas.DataFrame({'grp': ['A','B','C']}), annotation_colors=None)"
+  - "generate_annotation_colours(df, annotation_colors={'grp': {'A': '#111111', 'B': '#222222'}})  # 'grp' preserved as-is"
+related:
+  - pheatmap.convert_annotations
+  - pheatmap.colour_ramp_palette
+  - pheatmap.pheatmap

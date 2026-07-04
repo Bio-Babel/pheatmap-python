@@ -1,0 +1,29 @@
+id: pheatmap.grid_draw
+import_path: pheatmap._pheatmap_object.grid_draw
+kind: function
+signature: "grid_draw(x: Any, recording: bool = True) -> None"
+purpose: "Module-level grid.draw dispatcher: draws a PHeatmap's gtable (or any grid_py grob/gtable) to the active grid device."
+description: >
+  pheatmap/_pheatmap_object.py:61. If `x` is a PHeatmap, dispatches to
+  grid_py's grid_draw on `x.gtable`; otherwise passes `x` straight through to
+  grid_py's grid_draw. Used to re-render a PHeatmap returned with silent=True,
+  or to draw an arbitrary grid_py grob alongside pheatmap output.
+parameters:
+  - name: x
+    type: "PHeatmap | Any"
+    required: true
+    description: "A PHeatmap instance, or any grid_py grob/gtable to render."
+  - name: recording
+    type: bool
+    required: false
+    default: true
+    description: "Passed through to grid_py's grid_draw for display-list recording."
+mutates: "execution_class=side_effect; draws to the active grid device (grid_newpage() must have been called to open one); returns_kind=none"
+returns: "None"
+requires: []
+writes: []
+examples:
+  - "res = pheatmap(mat, silent=True)\ngrid_draw(res)"
+related:
+  - pheatmap.PHeatmap
+  - pheatmap.pheatmap

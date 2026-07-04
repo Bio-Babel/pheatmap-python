@@ -1,0 +1,159 @@
+id: pheatmap.heatmap_motor
+import_path: pheatmap._motor.heatmap_motor
+kind: function
+signature: "heatmap_motor(matrix, border_color, cellwidth, cellheight, tree_col, tree_row, treeheight_col, treeheight_row, filename, width, height, breaks, color, legend, annotation_row, annotation_col, annotation_colors, annotation_legend, annotation_names_row, annotation_names_col, main, fontsize, fontsize_row, fontsize_col, hjust_col, vjust_col, angle_col, fmat, fmat_draw, fontsize_number, number_color, gaps_col, gaps_row, labels_row, labels_col, use_raster=False, interpolate=False, **kwargs) -> gtable_py.Gtable"
+purpose: "Assemble the fully populated gtable for one heatmap: lay out the grid (via lo), add every grob (title, dendrograms, matrix, labels, annotations, legends), and optionally save it to a file."
+description: >
+  pheatmap/_motor.py:39. The single call pheatmap() makes to turn its
+  preprocessed matrix/breaks/colours/trees/annotations into a drawable
+  object. Calls lo() for the skeleton, then conditionally adds (via
+  gtable_add_grob at fixed t/l coordinates): draw_main (t=1,l=3),
+  draw_dendrogram for columns (t=2,l=3) and rows (t=4,l=1), draw_matrix
+  (t=4,l=3, always), draw_colnames (t=5,l=3), draw_rownames (t=4,l=4),
+  draw_annotations + draw_annotation_names for columns (t=3) and rows (t=2),
+  draw_annotation_legend and draw_legend (col 6/5). Cell borders are
+  suppressed when lo()'s `mindim < 3` bigpts. If `filename` is set, delegates
+  to an internal file writer supporting pdf/svg/ps (vector) and
+  png/jpeg/jpg/tiff/bmp (raster, 300dpi, jpeg/tiff/bmp via Pillow).
+parameters:
+  - name: matrix
+    type: np.ndarray
+    required: true
+    description: "The colour matrix (hex strings) produced by scale_colours."
+  - name: border_color
+    type: "str | None"
+    required: true
+  - name: cellwidth
+    type: "float | None"
+    required: true
+  - name: cellheight
+    type: "float | None"
+    required: true
+  - name: tree_col
+    type: "HClust | None"
+    required: true
+  - name: tree_row
+    type: "HClust | None"
+    required: true
+  - name: treeheight_col
+    type: float
+    required: true
+  - name: treeheight_row
+    type: float
+    required: true
+  - name: filename
+    type: "str | None"
+    required: true
+    description: "If set, writes to this path; extension must be one of pdf/svg/ps/png/jpeg/jpg/tiff/bmp."
+  - name: width
+    type: "float | None"
+    required: true
+  - name: height
+    type: "float | None"
+    required: true
+  - name: breaks
+    type: np.ndarray
+    required: true
+  - name: color
+    type: "Sequence[str]"
+    required: true
+  - name: legend
+    type: Any
+    required: true
+    description: "Legend label -> value dict, or None/NaN to skip the colour legend."
+  - name: annotation_row
+    type: "pandas.DataFrame | None"
+    required: true
+  - name: annotation_col
+    type: "pandas.DataFrame | None"
+    required: true
+  - name: annotation_colors
+    type: "Mapping[str, Any] | None"
+    required: true
+  - name: annotation_legend
+    type: bool
+    required: true
+  - name: annotation_names_row
+    type: bool
+    required: true
+  - name: annotation_names_col
+    type: bool
+    required: true
+  - name: main
+    type: "str | None"
+    required: true
+  - name: fontsize
+    type: float
+    required: true
+  - name: fontsize_row
+    type: float
+    required: true
+  - name: fontsize_col
+    type: float
+    required: true
+  - name: hjust_col
+    type: float
+    required: true
+  - name: vjust_col
+    type: float
+    required: true
+  - name: angle_col
+    type: float
+    required: true
+  - name: fmat
+    type: np.ndarray
+    required: true
+    description: "String matrix of per-cell display numbers (only drawn if fmat_draw)."
+  - name: fmat_draw
+    type: bool
+    required: true
+  - name: fontsize_number
+    type: float
+    required: true
+  - name: number_color
+    type: str
+    required: true
+  - name: gaps_col
+    type: "Sequence[int] | None"
+    required: true
+  - name: gaps_row
+    type: "Sequence[int] | None"
+    required: true
+  - name: labels_row
+    type: "Sequence[str] | None"
+    required: true
+  - name: labels_col
+    type: "Sequence[str] | None"
+    required: true
+  - name: use_raster
+    type: bool
+    required: false
+    default: false
+    description: "Draw the matrix body as raster tile(s) instead of per-cell vector rects."
+  - name: interpolate
+    type: bool
+    required: false
+    default: false
+mutates: "execution_class=builder; side effect: writes filename to disk when set (pdf/svg/ps/png/jpeg/jpg/tiff/bmp); no mutation of inputs; returns_kind=new_object"
+returns: "gtable_py.Gtable — fully populated, ready to grid_draw()."
+requires: []
+writes: []
+examples:
+  - "heatmap_motor(colour_matrix, border_color='grey60', cellwidth=None, cellheight=None, tree_col=tree_col, tree_row=tree_row, treeheight_col=50.0, treeheight_row=50.0, filename=None, width=None, height=None, breaks=breaks, color=color, legend=legend_dict, annotation_row=None, annotation_col=None, annotation_colors=None, annotation_legend=True, annotation_names_row=True, annotation_names_col=True, main=None, fontsize=10, fontsize_row=10, fontsize_col=10, hjust_col=1.0, vjust_col=1.0, angle_col=270.0, fmat=fmat, fmat_draw=False, fontsize_number=8.0, number_color='grey30', gaps_col=None, gaps_row=None, labels_row=labels_row, labels_col=labels_col)"
+failure_fixes:
+  - when: "filename has an extension other than pdf/svg/ps/png/jpeg/jpg/tiff/bmp"
+    suggest:
+      - "use one of the supported file extensions"
+    explanation: "Raises ValueError('File type should be: pdf, png, bmp, jpg, tiff') from the internal file writer."
+related:
+  - pheatmap.lo
+  - pheatmap.draw_matrix
+  - pheatmap.draw_dendrogram
+  - pheatmap.draw_colnames
+  - pheatmap.draw_rownames
+  - pheatmap.draw_annotations
+  - pheatmap.draw_annotation_names
+  - pheatmap.draw_annotation_legend
+  - pheatmap.draw_legend
+  - pheatmap.draw_main
+  - pheatmap.pheatmap

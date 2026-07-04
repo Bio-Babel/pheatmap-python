@@ -1,0 +1,40 @@
+id: pheatmap.draw_dendrogram
+import_path: pheatmap._grobs.draw_dendrogram
+kind: function
+signature: "draw_dendrogram(hc: HClust, gaps: Sequence[int] | None, horizontal: bool = True) -> grid_py.Grob"
+purpose: "Render a dendrogram (as a polyline grob) from an HClust tree, with cluster gaps if any."
+description: >
+  pheatmap/_grobs.py:69. Normalises heights to [0, 1/1.05], walks `hc.merge`
+  (R 1-based convention) to build the (x, height) coordinates of every merge
+  node, and emits a single polyline_grob with per-segment `id` grouping (4
+  points per merge: the classic elbow shape). Leaf x-positions come from
+  find_coordinates using `hc.order`. `horizontal=True` draws a column
+  dendrogram (heights increase upward); `horizontal=False` transposes/flips
+  for a row dendrogram (heights increase leftward). heatmap_motor calls this
+  once per axis when that axis is clustered and its treeheight is nonzero.
+parameters:
+  - name: hc
+    type: HClust
+    required: true
+    description: "Typically produced by cluster_mat (or a user-supplied HClust passed as cluster_rows/cluster_cols)."
+  - name: gaps
+    type: "Sequence[int] | None"
+    required: true
+    description: "Cluster gap positions for this axis (e.g. from find_gaps)."
+  - name: horizontal
+    type: bool
+    required: false
+    default: true
+    description: "True for a column (top) dendrogram, False for a row (left) dendrogram."
+mutates: "execution_class=pure_function; builds a new grob; returns_kind=new_object"
+returns: "grid_py polyline grob."
+requires: ["result.hclust"]
+writes: []
+examples:
+  - "hc = cluster_mat(mat, distance='euclidean', method='complete')\ndraw_dendrogram(hc, gaps=None, horizontal=True)"
+related:
+  - pheatmap.cluster_mat
+  - pheatmap.HClust
+  - pheatmap.find_coordinates
+  - pheatmap.find_gaps
+  - pheatmap.heatmap_motor

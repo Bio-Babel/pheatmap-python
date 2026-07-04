@@ -1,0 +1,24 @@
+id: pheatmap.draw_main
+import_path: pheatmap._grobs.draw_main
+kind: function
+signature: "draw_main(text: str, **kwargs) -> grid_py.Grob"
+purpose: "Render the heatmap's bold main title text."
+description: >
+  pheatmap/_grobs.py:599. `**kwargs` are merged into the Gpar with
+  fontface='bold' as the default, but a caller-supplied fontface in kwargs
+  wins (mirrors R's gpar(fontface='bold', ...) override semantics).
+  heatmap_motor calls this with fontsize=1.3*fontsize when pheatmap()'s
+  `main` is set.
+parameters:
+  - name: text
+    type: str
+    required: true
+mutates: "execution_class=pure_function; builds a new grob; returns_kind=new_object"
+returns: "grid_py text grob."
+requires: []
+writes: []
+examples:
+  - "draw_main('Example heatmap', fontsize=13.0)"
+related:
+  - pheatmap.heatmap_motor
+  - pheatmap.pheatmap

@@ -1,0 +1,36 @@
+id: pheatmap.draw_annotation_legend
+import_path: pheatmap._grobs.draw_annotation_legend
+kind: function
+signature: "draw_annotation_legend(annotation: Mapping[str, pandas.Series], annotation_colors: Mapping[str, Any], border_color: str | None, **kwargs) -> grid_py.GTree"
+purpose: "Compose the annotation legend as a vertically stacked list: for each annotation column, its bold name followed by either colour swatches with level labels (categorical) or a 4-step gradient block with min/max labels (continuous)."
+description: >
+  pheatmap/_grobs.py:491. Iterates `annotation.items()` top-to-bottom,
+  advancing a running `y` cursor. Categorical columns draw one square swatch
+  per level (from `annotation_colors[name]`, either a {level: colour} dict or
+  a parallel list) with the level name beside it. Continuous columns draw a
+  4-colour vertical gradient (via colour_ramp_palette) with only the min and
+  max value labelled (grid_pretty-derived range). heatmap_motor builds
+  `annotation` as the reverse-ordered union of annotation_col then
+  annotation_row columns before calling this once.
+parameters:
+  - name: annotation
+    type: "Mapping[str, pandas.Series]"
+    required: true
+    description: "Ordered {column name -> Series} to render, one legend block per entry."
+  - name: annotation_colors
+    type: "Mapping[str, Any]"
+    required: true
+    description: "Column -> palette, as produced by generate_annotation_colours."
+  - name: border_color
+    type: "str | None"
+    required: true
+mutates: "execution_class=pure_function; builds a new grob tree; returns_kind=new_object"
+returns: "grid_py.GTree"
+requires: []
+writes: []
+examples:
+  - "draw_annotation_legend({'grp': annotation_col['grp']}, annotation_colors={'grp': {'A': '#111111', 'B': '#222222'}}, border_color='grey60')"
+related:
+  - pheatmap.generate_annotation_colours
+  - pheatmap.colour_ramp_palette
+  - pheatmap.heatmap_motor

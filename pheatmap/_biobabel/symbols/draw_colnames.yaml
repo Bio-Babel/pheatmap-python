@@ -1,0 +1,35 @@
+id: pheatmap.draw_colnames
+import_path: pheatmap._grobs.draw_colnames
+kind: function
+signature: "draw_colnames(coln, gaps, vjust_col, hjust_col, angle_col, **kwargs) -> grid_py.Grob"
+purpose: "Render column name labels below the matrix, positioned per-column via find_coordinates and rotated/justified per angle_col."
+description: >
+  pheatmap/_grobs.py:298. `**kwargs` are forwarded into grid_py's Gpar (e.g.
+  fontsize). Called by heatmap_motor with the (hjust_col, vjust_col, angle_col)
+  triple pheatmap() derives from its angle_col string ('0'/'45'/'90'/'270'/'315').
+parameters:
+  - name: coln
+    type: "Sequence[str]"
+    required: true
+  - name: gaps
+    type: "Sequence[int] | None"
+    required: true
+  - name: vjust_col
+    type: float
+    required: true
+  - name: hjust_col
+    type: float
+    required: true
+  - name: angle_col
+    type: float
+    required: true
+    description: "Rotation angle in degrees."
+mutates: "execution_class=pure_function; builds a new grob; returns_kind=new_object"
+returns: "grid_py text grob."
+requires: []
+writes: []
+examples:
+  - "draw_colnames(['Test1','Test2'], gaps=None, vjust_col=1.0, hjust_col=1.0, angle_col=270.0)"
+related:
+  - pheatmap.find_coordinates
+  - pheatmap.heatmap_motor

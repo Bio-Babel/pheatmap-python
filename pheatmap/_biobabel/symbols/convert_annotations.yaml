@@ -1,0 +1,38 @@
+id: pheatmap.convert_annotations
+import_path: pheatmap._colours.convert_annotations
+kind: function
+signature: "convert_annotations(annotation: pandas.DataFrame, annotation_colors: Mapping[str, Any]) -> np.ndarray"
+purpose: "Convert an annotation DataFrame into a matrix of hex colours using per-column palettes, for drawing the annotation tracks."
+description: >
+  pheatmap/_colours.py:116. For each column: if categorical/object dtype,
+  every non-NaN level must be a key in `annotation_colors[col]` (a
+  level -> colour dict) or ValueError is raised; NaN entries become None. If
+  numeric, values are binned into 100 steps over [nanmin, nanmax] and mapped
+  through a 100-step colour_ramp_palette built from `annotation_colors[col]`
+  (a short list of anchor colours). heatmap_motor calls this once for
+  annotation_col and once for annotation_row, using the palette map produced
+  by generate_annotation_colours.
+parameters:
+  - name: annotation
+    type: pandas.DataFrame
+    required: true
+    description: "Columns are either categorical/object (levels) or numeric (continuous)."
+  - name: annotation_colors
+    type: "Mapping[str, Any]"
+    required: true
+    description: "Column -> palette: a {level: colour} dict for categorical columns, or a short list of hex anchor colours for numeric columns. Must already have an entry for every column of annotation."
+mutates: "execution_class=pure_function; no mutation; returns_kind=new_object"
+returns: "np.ndarray (object dtype), same shape as annotation, containing hex colour strings (or None for NaN)."
+requires: []
+writes: []
+examples:
+  - "convert_annotations(pandas.DataFrame({'grp': ['A','B','A']}), {'grp': {'A': '#111111', 'B': '#222222'}})"
+failure_fixes:
+  - when: "a categorical column contains a level not present in annotation_colors[col]"
+    suggest:
+      - "add the missing level to annotation_colors[col], or regenerate a complete palette via generate_annotation_colours before calling convert_annotations"
+    explanation: "Raises ValueError('Factor levels on variable {col} do not match with annotation_colors')."
+related:
+  - pheatmap.generate_annotation_colours
+  - pheatmap.draw_annotations
+  - pheatmap.pheatmap
