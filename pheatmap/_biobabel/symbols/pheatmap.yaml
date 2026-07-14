@@ -261,8 +261,10 @@ mutates: "execution_class=pure_function; does not mutate mat/annotation_row/anno
 returns: >
   PHeatmap — a dataclass with tree_row (HClust | None), tree_col (HClust | None),
   kmeans (dict with centers/cluster/sizes, or None), and gtable (the composed
-  gtable_py.Gtable). Call `.draw()` or `grid_draw(result)` to render it again
-  later; in Jupyter it also auto-renders via `_ipython_display_`.
+  gtable_py.Gtable). The result is a static grid_py/gtable_py object, NOT a
+  matplotlib Figure/Axes — render it with `.draw()` or `grid_draw(result)`
+  (in Jupyter it also auto-renders via `_ipython_display_`); matplotlib
+  APIs (plt.savefig, fig.axes, etc.) do not apply.
 requires: []
 writes: []
 examples:

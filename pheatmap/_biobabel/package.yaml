@@ -10,27 +10,4 @@ r_package:
   package: pheatmap
   version_or_commit: ffd0f8c
   fidelity: full
-capabilities:
-  - clustered_heatmap
-  - row_column_annotations
-  - dendrogram_rendering
-  - kmeans_row_aggregation
-  - raster_export_for_large_matrices
-  - file_export_pdf_png_svg_ps_jpeg_tiff_bmp
-domain_tags:
-  - bioinformatics
-  - visualization
-task_tags:
-  - heatmap
-  - clustering
-  - dendrogram
 foundation: []
-triggers:
-  - "draw a clustered, annotated heatmap from a numeric matrix or DataFrame"
-  - "need a grid_py/gtable_py-based heatmap with row/column dendrograms and a colour legend"
-  - "porting an R pheatmap() call and need matching output"
-  - "want a heatmap saved directly to pdf/png/svg/ps/jpeg/tiff/bmp without matplotlib"
-  - "need to embed the heatmap body as a raster image to keep PDF/SVG file size bounded on very large matrices (use_raster)"
-not_when:
-  - "the output must be a matplotlib Figure/Axes — pheatmap renders through grid_py's Cairo backend, not matplotlib, so its result cannot be composed into a matplotlib figure"
-  - "an interactive/zoomable heatmap is needed — pheatmap only produces a static render"
